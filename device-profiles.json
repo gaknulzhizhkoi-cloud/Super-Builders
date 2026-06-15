@@ -5,7 +5,7 @@
       "codename": "oriole",
       "android_version": "android14",
       "kernel_version": "6.1",
-      "sub_level": "99",
+      "sub_level": "134",
       "os_patch_level": "2024-10",
       "stock_kernel": {
         "release": "-android14-11-gd7dac4b14270-ab12946699",
