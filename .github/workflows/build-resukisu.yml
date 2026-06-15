@@ -209,7 +209,7 @@ jobs:
         patch -p1 -F3 --no-backup-if-mismatch < "$GITHUB_WORKSPACE/$VERSION_DIR/ReSukiSU/patches/50_add_susfs_in_gki-${ANDROID_VER}-${KERNEL_VER}.patch"
 
     - name: Apply Enhanced SUSFS Patch
-      if: inputs.add_susfs
+      if: false  # DISABLED: HARDENED/HIDDEN_NAME are 5.10-only, cause bootloop on 6.1
       working-directory: ${{ env.KERNEL_ROOT }}/common
       run: |
         patch -p1 -F3 --no-backup-if-mismatch < "$GITHUB_WORKSPACE/$VERSION_DIR/ReSukiSU/patches/51_enhanced_susfs-${ANDROID_VER}-${KERNEL_VER}.patch"
@@ -411,7 +411,7 @@ jobs:
         LTO_MODE=thin
         [[ "$ANDROID_VER" == android16* || "$KERNEL_VER" == "6.12" ]] && LTO_MODE=none
         if [ -f "build/build.sh" ]; then
-          KMI_SYMBOL_LIST_STRICT_MODE=0 HOSTLD=/usr/bin/ld.lld GKI_DEFCONFIG_FRAGMENT="$DEFCONFIG_FRAGMENT" LTO=$LTO_MODE BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || BUILD_RC=$?
+          KMI_SYMBOL_LIST_STRICT_MODE=0 HOSTLD=/usr/bin/ld.lld GKI_DEFCONFIG_FRAGMENT="$DEFCONFIG_FRAGMENT" LTO=$LTO_MODE KBUILD_BUILD_TIMESTAMP="${KBUILD_BUILD_TIMESTAMP:-}" BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || BUILD_RC=$?
         else
           # Prebuilt clang sysroot lacks glibc 2.39 C23 symbols — link against system libc
           if [ -f common/tools/bpf/resolve_btfids/Makefile ]; then
