@@ -214,7 +214,7 @@ jobs:
         patch -p1 -F3 --no-backup-if-mismatch < "$GITHUB_WORKSPACE/$VERSION_DIR/KernelSU-Next/patches/51_enhanced_susfs-${ANDROID_VER}-${KERNEL_VER}.patch"
 
     - name: Apply KSU Safety Patch
-      if: inputs.add_susfs
+      if: inputs.add_susfs && false  # DISABLED for pershoot: dev-susfs already has SUSFS built-in
       working-directory: ${{ env.KERNEL_ROOT }}/${{ env.KSU_DIR }}
       run: |
         PATCH="$GITHUB_WORKSPACE/$VERSION_DIR/KernelSU-Next/patches/70_ksu_safety-kernelsu-next-${KERNEL_VER}.patch"
