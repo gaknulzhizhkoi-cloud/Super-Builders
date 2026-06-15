@@ -17,9 +17,25 @@ on:
           - ReSukiSU
           - WKSU
           # - RKSU  # no SUSFS integration — deferred
-        default: "SukiSU"
+        default: "ReSukiSU"
       add_susfs:
         description: "Add Enhanced SUSFS"
+        type: boolean
+        default: true
+      add_resukisu:
+        description: "Integrate ReSukiSU (ReSukiSU builds only)"
+        type: boolean
+        default: true
+      add_susfs_base:
+        description: "Apply base SUSFS patch 50 (ReSukiSU builds only)"
+        type: boolean
+        default: true
+      add_enhanced_susfs:
+        description: "Apply enhanced SUSFS patch 51 (ReSukiSU builds only)"
+        type: boolean
+        default: true
+      add_ksu_safety:
+        description: "Apply ReSukiSU safety patch 70"
         type: boolean
         default: true
       add_zeromount:
@@ -46,6 +62,10 @@ on:
         description: "SukiSU commit (empty = pinned default)"
         type: string
         default: ""
+      kernel_commit:
+        description: "Exact common-kernel commit (empty = device profile/default branch)"
+        type: string
+        default: ""
       device_codename:
         description: "Device profile (generic = no identity spoofing)"
         type: choice
@@ -53,13 +73,25 @@ on:
           - generic
           - lake
           - oriole
-        default: "lake"
+        default: "oriole"
   workflow_call:
     inputs:
       ksu_variant:
         type: string
         default: "SukiSU"
       add_susfs:
+        type: boolean
+        default: true
+      add_resukisu:
+        type: boolean
+        default: true
+      add_susfs_base:
+        type: boolean
+        default: true
+      add_enhanced_susfs:
+        type: boolean
+        default: true
+      add_ksu_safety:
         type: boolean
         default: true
       add_zeromount:
@@ -78,6 +110,9 @@ on:
         type: boolean
         default: false
       sukisu_commit:
+        type: string
+        default: ""
+      kernel_commit:
         type: string
         default: ""
       device_codename:
@@ -226,48 +261,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - sub_level: "25"
-            os_patch_level: "2023-10"
-          - sub_level: "43"
-            os_patch_level: "2023-11"
-          - sub_level: "57"
-            os_patch_level: "2024-01"
-          - sub_level: "68"
-            os_patch_level: "2024-03"
-          - sub_level: "75"
-            os_patch_level: "2024-05"
-          - sub_level: "78"
-            os_patch_level: "2024-06"
-          - sub_level: "84"
-            os_patch_level: "2024-07"
-          - sub_level: "90"
-            os_patch_level: "2024-08"
-          - sub_level: "93"
-            os_patch_level: "2024-09"
           - sub_level: "99"
             os_patch_level: "2024-10"
-          - sub_level: "112"
-            os_patch_level: "2024-11"
-          - sub_level: "115"
-            os_patch_level: "2024-12"
-          - sub_level: "118"
-            os_patch_level: "2025-01"
-          - sub_level: "124"
-            os_patch_level: "2025-02"
-          - sub_level: "128"
-            os_patch_level: "2025-03"
-          - sub_level: "129"
-            os_patch_level: "2025-04"
-          - sub_level: "134"
-            os_patch_level: "2025-05"
-          - sub_level: "138"
-            os_patch_level: "2025-06"
-          - sub_level: "141"
-            os_patch_level: "2025-07"
-          - sub_level: "145"
-            os_patch_level: "2025-09"
-          - sub_level: "157"
-            os_patch_level: "2025-12"
     uses: ./.github/workflows/build-resukisu.yml
     with:
       android_version: android14
@@ -275,12 +270,17 @@ jobs:
       sub_level: ${{ matrix.sub_level }}
       os_patch_level: ${{ matrix.os_patch_level }}
       add_susfs: ${{ inputs.add_susfs }}
+      add_resukisu: ${{ inputs.add_resukisu }}
+      add_susfs_base: ${{ inputs.add_susfs_base }}
+      add_enhanced_susfs: ${{ inputs.add_enhanced_susfs }}
+      add_ksu_safety: ${{ inputs.add_ksu_safety }}
       add_zeromount: ${{ inputs.add_zeromount }}
       add_zram: ${{ inputs.add_zram }}
       add_bbg: ${{ inputs.add_bbg }}
       add_overlayfs_support: ${{ inputs.add_overlayfs_support }}
       add_kpm: ${{ inputs.add_kpm }}
       sukisu_commit: ${{ inputs.sukisu_commit }}
+      kernel_commit: ${{ inputs.kernel_commit }}
       device_codename: ${{ inputs.device_codename }}
 
   build-wksu:

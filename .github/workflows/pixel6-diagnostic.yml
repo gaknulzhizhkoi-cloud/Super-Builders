@@ -1,0 +1,60 @@
+name: Pixel 6 Diagnostic Matrix
+
+permissions:
+  contents: write
+  actions: write
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - ".github/workflows/build-resukisu.yml"
+      - ".github/workflows/pixel6-diagnostic.yml"
+      - "android14-6.1/**"
+      - "device-profiles.json"
+
+jobs:
+  download-dependencies:
+    uses: ./.github/workflows/cache-dependencies.yml
+    permissions:
+      contents: read
+      actions: write
+
+  build:
+    needs: [download-dependencies]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { artifact_name: G0-stock-common, add_resukisu: false, add_susfs_base: false, add_enhanced_susfs: false, add_zeromount: false, add_ksu_safety: false }
+          - { artifact_name: R0-resukisu, add_resukisu: true, add_susfs_base: false, add_enhanced_susfs: false, add_zeromount: false, add_ksu_safety: false }
+          - { artifact_name: S0-susfs-base, add_resukisu: true, add_susfs_base: true, add_enhanced_susfs: false, add_zeromount: false, add_ksu_safety: false }
+          - { artifact_name: S1-enhanced, add_resukisu: true, add_susfs_base: true, add_enhanced_susfs: true, add_zeromount: false, add_ksu_safety: false }
+          - { artifact_name: Z0-zeromount, add_resukisu: true, add_susfs_base: true, add_enhanced_susfs: true, add_zeromount: true, add_ksu_safety: false }
+          - { artifact_name: K0-safety, add_resukisu: true, add_susfs_base: true, add_enhanced_susfs: true, add_zeromount: false, add_ksu_safety: true }
+          - { artifact_name: FULL-minimal, add_resukisu: true, add_susfs_base: true, add_enhanced_susfs: true, add_zeromount: true, add_ksu_safety: true }
+    uses: ./.github/workflows/build-resukisu.yml
+    with:
+      android_version: android14
+      kernel_version: "6.1"
+      sub_level: "99"
+      os_patch_level: "2024-10"
+      device_codename: oriole
+      kernel_commit: d7dac4b14270c5a49bf0bcc32a4505c0657b3be8
+      sukisu_commit: d17b74fda72050ee2b8d5c0eb73d051ae64e7956
+      artifact_name: ${{ matrix.artifact_name }}
+      diagnostic_mode: true
+      build_pixel_boot: true
+      add_resukisu: ${{ matrix.add_resukisu }}
+      add_susfs: true
+      add_susfs_base: ${{ matrix.add_susfs_base }}
+      add_enhanced_susfs: ${{ matrix.add_enhanced_susfs }}
+      add_zeromount: ${{ matrix.add_zeromount }}
+      add_ksu_safety: ${{ matrix.add_ksu_safety }}
+      add_zram: false
+      add_bbg: false
+      add_overlayfs_support: false
+      add_kpm: false
+      add_ptrace_fix: false
+      add_perf_patches: false
+      add_module_version_bypass: false
