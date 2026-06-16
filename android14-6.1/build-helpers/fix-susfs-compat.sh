@@ -162,5 +162,109 @@ else
     echo "fix-susfs-compat: setuid_hook.c not found — skipping"
 fi
 
+# ---------------------------------------------------------------------------
+# Fix 7: Android 14 6.1 Pixel/common SUSFS 2.1 strict-context fallout
+# The upstream 50_ patch is close to this tree but misses a few no-fuzz
+# contexts in exec.c, proc/base.c, and proc/task_mmu.c. Apply the missing
+# hunks explicitly, remove only matching reject files, and repair the upstream
+# open_redirect maps helper so the spoofed pathname pointer reaches caller.
+# ---------------------------------------------------------------------------
+if [ "$ANDROID_VER" = "android14" ] && [ "$KERNEL_VER" = "6.1" ]; then
+    python3 - "$KERNEL_DIR" << 'PYEOF'
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+
+def read(path):
+    return path.read_text()
+
+def write(path, text):
+    path.write_text(text)
+
+def unlink_reject(path, required):
+    rej = Path(str(path) + ".rej")
+    if not rej.exists():
+        return
+    text = read(path)
+    for needle in required:
+        if needle not in text:
+            raise SystemExit(f"fix-susfs-compat: refusing to remove {rej}, missing {needle!r}")
+    rej.unlink()
+    print(f"fix-susfs-compat: removed repaired reject {rej}")
+
+exec_c = root / "fs/exec.c"
+if exec_c.exists():
+    unlink_reject(exec_c, ["#include <linux/susfs_def.h>", "ksu_handle_execveat_sucompat"])
+
+base_c = root / "fs/proc/base.c"
+if base_c.exists():
+    text = read(base_c)
+    old = "#ifdef CONFIG_KSU_SUSFS_SUS_MAP\n#include <linux/susfs_def.h>\n#endif\n\n#include <trace/events/oom.h>"
+    new = "#if defined(CONFIG_KSU_SUSFS_SUS_MAP) || defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)\n#include <linux/susfs_def.h>\n#endif\n\n#include <trace/events/oom.h>"
+    if old in text and new not in text:
+        write(base_c, text.replace(old, new, 1))
+        print("fix-susfs-compat: widened proc/base.c susfs_def include guard")
+    unlink_reject(base_c, ["CONFIG_KSU_SUSFS_OPEN_REDIRECT", "susfs_open_redirect_spoof_do_proc_readlink"])
+
+task_mmu = root / "fs/proc/task_mmu.c"
+if task_mmu.exists():
+    text = read(task_mmu)
+    text = text.replace(
+        "extern int susfs_open_redirect_spoof_show_map_vma(struct inode *inode, unsigned long *out_ino, dev_t *out_dev, char *spoofed_name);",
+        "extern int susfs_open_redirect_spoof_show_map_vma(struct inode *inode, unsigned long *out_ino, dev_t *out_dev, char **spoofed_name);",
+        1,
+    )
+    if "char *spoofed_redirected_name = NULL;" not in text:
+        text = text.replace(
+            "\tconst char *name = NULL;\n\n\tif (file) {",
+            "\tconst char *name = NULL;\n#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT\n\tchar *spoofed_redirected_name = NULL;\n#endif // #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT\n\n\tif (file) {",
+            1,
+        )
+    if "SUSFS_IS_INODE_OPEN_REDIRECT(inode)" not in text:
+        text = text.replace(
+            "\tif (file) {\n\t\tstruct inode *inode = file_inode(vma->vm_file);\n\t\tdev = inode->i_sb->s_dev;",
+            "\tif (file) {\n\t\tstruct inode *inode = file_inode(vma->vm_file);\n#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT\n\t\tif (SUSFS_IS_INODE_OPEN_REDIRECT(inode)) {\n\t\t\tif (!susfs_open_redirect_spoof_show_map_vma(inode, &ino, &dev, &spoofed_redirected_name)) {\n\t\t\t\tpgoff = ((loff_t)vma->vm_pgoff) << PAGE_SHIFT;\n\t\t\t\tgoto orig_flow;\n\t\t\t}\n\t\t}\n#endif // #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT\n#ifdef CONFIG_KSU_SUSFS_SUS_MAP\n\t\tif (SUSFS_IS_INODE_SUS_MAP(inode))\n\t\t\treturn;\n#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP\n\t\tdev = inode->i_sb->s_dev;",
+            1,
+        )
+    if "susfs_sus_kstat_spoof_show_map_vma(inode, &dev, &ino);" not in text:
+        text = text.replace(
+            "\t\tino = inode->i_ino;\n\t\tpgoff = ((loff_t)vma->vm_pgoff) << PAGE_SHIFT;\n\t}\n\n\tstart = vma->vm_start;",
+            "\t\tino = inode->i_ino;\n\t\tpgoff = ((loff_t)vma->vm_pgoff) << PAGE_SHIFT;\n#ifdef CONFIG_KSU_SUSFS_SUS_KSTAT\n\t\tsusfs_sus_kstat_spoof_show_map_vma(inode, &dev, &ino);\n#endif // #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT\n\t}\n\n#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT\norig_flow:\n#endif // #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT\n\n\tstart = vma->vm_start;",
+            1,
+        )
+    if "if (vma->vm_file) {\n\t\tif (SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file)))\n\t\t\treturn 0;" not in text:
+        text = text.replace(
+            "\tstruct vm_area_struct *vma = get_data_vma(v);\n\tstruct mem_size_stats mss;\n\n\tmemset(&mss, 0, sizeof(mss));",
+            "\tstruct vm_area_struct *vma = get_data_vma(v);\n\tstruct mem_size_stats mss;\n\n#ifdef CONFIG_KSU_SUSFS_SUS_MAP\n\tif (vma->vm_file) {\n\t\tif (SUSFS_IS_INODE_SUS_MAP(file_inode(vma->vm_file)))\n\t\t\treturn 0;\n\t}\n#endif // #ifdef CONFIG_KSU_SUSFS_SUS_MAP\n\n\tmemset(&mss, 0, sizeof(mss));",
+            1,
+        )
+    write(task_mmu, text)
+    unlink_reject(task_mmu, [
+        "char *spoofed_redirected_name = NULL;",
+        "SUSFS_IS_INODE_OPEN_REDIRECT(inode)",
+        "SUSFS_IS_INODE_SUS_MAP(inode)",
+        "susfs_sus_kstat_spoof_show_map_vma(inode, &dev, &ino);",
+        "orig_flow:",
+    ])
+
+susfs_c = root / "fs/susfs.c"
+if susfs_c.exists():
+    text = read(susfs_c)
+    if "susfs_open_redirect_spoof_show_map_vma(struct inode *inode, unsigned long *out_ino, dev_t *out_dev, char **spoofed_name)" not in text:
+        text = text.replace(
+            "susfs_open_redirect_spoof_show_map_vma(struct inode *inode, unsigned long *out_ino, dev_t *out_dev, char *spoofed_name)",
+            "susfs_open_redirect_spoof_show_map_vma(struct inode *inode, unsigned long *out_ino, dev_t *out_dev, char **spoofed_name)",
+            1,
+        )
+        text = text.replace("if (spoofed_name) {", "if (*spoofed_name) {", 1)
+        text = text.replace("spoofed_name = kzalloc(SUSFS_MAX_LEN_PATHNAME, GFP_KERNEL);", "*spoofed_name = kzalloc(SUSFS_MAX_LEN_PATHNAME, GFP_KERNEL);", 1)
+        text = text.replace("if (!spoofed_name) {", "if (!*spoofed_name) {", 1)
+        text = text.replace("strncpy(spoofed_name, entry->info.redirected_pathname, SUSFS_MAX_LEN_PATHNAME - 1);", "strncpy(*spoofed_name, entry->info.redirected_pathname, SUSFS_MAX_LEN_PATHNAME - 1);", 1)
+        write(susfs_c, text)
+        print("fix-susfs-compat: repaired susfs open_redirect show_map_vma pointer return")
+PYEOF
+fi
+
 echo "fix-susfs-compat: done"
 exit 0
