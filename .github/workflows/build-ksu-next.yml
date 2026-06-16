@@ -208,7 +208,7 @@ jobs:
         patch -p1 -F3 --no-backup-if-mismatch < "$GITHUB_WORKSPACE/$VERSION_DIR/KernelSU-Next/patches/50_add_susfs_in_gki-${ANDROID_VER}-${KERNEL_VER}.patch"
 
     - name: Apply Enhanced SUSFS Patch
-      if: inputs.add_susfs
+      if: false  # DISABLED: HARDENED/HIDDEN_NAME cause bootloop on ALL KSU variants for 6.1
       working-directory: ${{ env.KERNEL_ROOT }}/common
       run: |
         patch -p1 -F3 --no-backup-if-mismatch < "$GITHUB_WORKSPACE/$VERSION_DIR/KernelSU-Next/patches/51_enhanced_susfs-${ANDROID_VER}-${KERNEL_VER}.patch"
