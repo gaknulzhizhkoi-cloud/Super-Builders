@@ -9,7 +9,7 @@ LOG_FILE="$STATE_DIR/resukisu-stealth.log"
 MODULES_DIR=/data/adb/modules
 MODULES_UPDATE_DIR=/data/adb/modules_update
 
-KNOWN_PATTERN='brene|brewheel|brezygisk|rezygisk|zygisk|lsposed|relsposed|teesimulator|rstee|ta_enhanced|tricky|metamount|metamount-rs'
+KNOWN_PATTERN='brene|brewheel|brezygisk|rezygisk|zygisk|lsposed|relsposed|teesimulator|rstee|ta_enhanced|tricky|meta[ -]?magic[ -]?mount|metamagic|magicmount|metamount|mmount'
 
 log() {
   mkdir -p "$STATE_DIR" 2>/dev/null || true
@@ -102,7 +102,7 @@ scan_module_dir() {
   add_unique "$GEN_DIR/sus_mount.txt" "$real"
   add_unique "$GEN_DIR/sus_kstat.txt" "$real"
 
-  find "$dir" -type f \( -name '*.so' -o -name '*.dex' -o -name '*.jar' -o -name '*.apk' -o -name '*zygisk*' -o -name '*lsposed*' -o -name '*relsposed*' -o -name '*daemon*' -o -name '*service*' -o -name '*tee*' -o -name '*tricky*' -o -name '*metamount*' \) 2>/dev/null |
+  find "$dir" -type f \( -name '*.so' -o -name '*.dex' -o -name '*.jar' -o -name '*.apk' -o -name '*zygisk*' -o -name '*lsposed*' -o -name '*relsposed*' -o -name '*daemon*' -o -name '*service*' -o -name '*tee*' -o -name '*tricky*' -o -name '*meta*mount*' -o -name '*magic*mount*' -o -name '*mmount*' \) 2>/dev/null |
     while IFS= read -r file; do
       real_file="$file"
       [ -n "$realpath_bin" ] && real_file=$(readlink -f "$file" 2>/dev/null || printf '%s' "$file")

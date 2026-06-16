@@ -8,7 +8,7 @@
 - ReLSPosed or LSPosed
 - rsTEESimulator-RS
 - TA_enhanced
-- metamount-rs
+- Meta Magic Mount RS
 
 BRENE remains the preferred owner of `/data/adb/ksu/bin/ksu_susfs`. This module reuses that helper when it works and only generates/apply rules around the real modules installed on the device.
 
