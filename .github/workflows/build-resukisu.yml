@@ -313,6 +313,11 @@ jobs:
           SUSFS_PATCH="$(find "$SUSFS_WORK" -path "*/kernel_patches/50_add_susfs_in_gki-${ANDROID_VER}-${KERNEL_VER}.patch" -type f | head -1)"
           [ -s "$SUSFS_PATCH" ] || { echo "FATAL: SUSFS patch not found for ${ANDROID_VER}-${KERNEL_VER} at ${SUSFS_COMMIT}"; exit 1; }
           echo "Using upstream SUSFS commit ${SUSFS_COMMIT}"
+          SUSFS_ROOT="$(dirname "$SUSFS_PATCH")"
+          cp -f "$SUSFS_ROOT/fs/susfs.c" fs/susfs.c
+          mkdir -p include/linux
+          cp -f "$SUSFS_ROOT/include/linux/susfs.h" include/linux/susfs.h
+          cp -f "$SUSFS_ROOT/include/linux/susfs_def.h" include/linux/susfs_def.h
         fi
         set +e
         patch -p1 --fuzz=0 --no-backup-if-mismatch < "$SUSFS_PATCH"
