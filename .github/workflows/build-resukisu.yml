@@ -314,7 +314,17 @@ jobs:
           [ -s "$SUSFS_PATCH" ] || { echo "FATAL: SUSFS patch not found for ${ANDROID_VER}-${KERNEL_VER} at ${SUSFS_COMMIT}"; exit 1; }
           echo "Using upstream SUSFS commit ${SUSFS_COMMIT}"
         fi
+        set +e
         patch -p1 --fuzz=0 --no-backup-if-mismatch < "$SUSFS_PATCH"
+        PATCH_RC=$?
+        set -e
+
+        FIX="$GITHUB_WORKSPACE/$VERSION_DIR/build-helpers/fix-susfs-compat.sh"
+        [ -f "$FIX" ] && bash "$FIX" . "$SUBLEVEL" "$ANDROID_VER" "$KERNEL_VER" "$KERNEL_PATCHES" || true
+        if find . -type f -name '*.rej' | grep -q .; then
+          echo "SUSFS patch still has rejects after compatibility fixes"
+          exit "${PATCH_RC:-1}"
+        fi
 
     - name: Apply Enhanced SUSFS Patch
       if: inputs.add_susfs && inputs.add_enhanced_susfs
