@@ -61,6 +61,9 @@ on:
       sukisu_commit:
         type: string
         default: ""
+      susfs_commit:
+        type: string
+        default: ""
       device_codename:
         type: string
         default: ""
@@ -287,6 +290,8 @@ jobs:
     - name: Apply Upstream SUSFS Patch
       if: inputs.add_susfs && inputs.add_susfs_base
       working-directory: ${{ env.KERNEL_ROOT }}/common
+      env:
+        SUSFS_COMMIT: ${{ inputs.susfs_commit }}
       run: |
         if ! grep -q '^#include <linux/susfs_def.h>$' fs/exec.c; then
           perl -0pi -e 's|#include <linux/coredump.h>\n\n|#include <linux/coredump.h>\n\n#ifdef CONFIG_KSU_SUSFS\n#include <linux/susfs_def.h>\n#endif\n|s' fs/exec.c
@@ -294,7 +299,22 @@ jobs:
         if ! grep -q '^#include <linux/susfs_def.h>$' fs/proc/base.c; then
           perl -0pi -e 's|#include <linux/cpufreq_times.h>\n|#include <linux/cpufreq_times.h>\n#ifdef CONFIG_KSU_SUSFS_SUS_MAP\n#include <linux/susfs_def.h>\n#endif\n\n|s' fs/proc/base.c
         fi
-        patch -p1 --fuzz=0 --no-backup-if-mismatch < "$GITHUB_WORKSPACE/$VERSION_DIR/ReSukiSU/patches/50_add_susfs_in_gki-${ANDROID_VER}-${KERNEL_VER}.patch"
+        SUSFS_PATCH="$GITHUB_WORKSPACE/$VERSION_DIR/ReSukiSU/patches/50_add_susfs_in_gki-${ANDROID_VER}-${KERNEL_VER}.patch"
+        if [ -n "$SUSFS_COMMIT" ]; then
+          SUSFS_WORK="$RUNNER_TEMP/susfs4ksu-${SUSFS_COMMIT}"
+          SUSFS_ZIP="$RUNNER_TEMP/susfs4ksu-${SUSFS_COMMIT}.zip"
+          curl -fL "https://gitlab.com/simonpunk/susfs4ksu/-/archive/${SUSFS_COMMIT}/susfs4ksu-${SUSFS_COMMIT}.zip" -o "$SUSFS_ZIP"
+          python3 - "$SUSFS_ZIP" "$SUSFS_WORK" <<'PY'
+        import sys, zipfile
+        zip_path, out_dir = sys.argv[1:]
+        with zipfile.ZipFile(zip_path) as z:
+            z.extractall(out_dir)
+        PY
+          SUSFS_PATCH="$(find "$SUSFS_WORK" -path "*/kernel_patches/50_add_susfs_in_gki-${ANDROID_VER}-${KERNEL_VER}.patch" -type f | head -1)"
+          [ -s "$SUSFS_PATCH" ] || { echo "FATAL: SUSFS patch not found for ${ANDROID_VER}-${KERNEL_VER} at ${SUSFS_COMMIT}"; exit 1; }
+          echo "Using upstream SUSFS commit ${SUSFS_COMMIT}"
+        fi
+        patch -p1 --fuzz=0 --no-backup-if-mismatch < "$SUSFS_PATCH"
 
     - name: Apply Enhanced SUSFS Patch
       if: inputs.add_susfs && inputs.add_enhanced_susfs
@@ -475,6 +495,10 @@ jobs:
           SOURCE_FRAGMENT="$RUNNER_TEMP/diagnostic.fragment"
           printf '# [base]\n' > "$SOURCE_FRAGMENT"
           [[ "$ADD_RESUKISU" == "true" ]] && echo 'CONFIG_KSU=y' >> "$SOURCE_FRAGMENT"
+          [[ "$ADD_RESUKISU" == "true" ]] && echo 'CONFIG_KSU_MULTI_MANAGER_SUPPORT=y' >> "$SOURCE_FRAGMENT"
+          [[ "$ADD_RESUKISU" == "true" ]] && echo 'CONFIG_KSU_TOOLKIT_SUPPORT=y' >> "$SOURCE_FRAGMENT"
+          [[ "$ADD_KPM" == "true" ]] && echo 'CONFIG_KALLSYMS=y' >> "$SOURCE_FRAGMENT"
+          [[ "$ADD_KPM" == "true" ]] && echo 'CONFIG_KALLSYMS_ALL=y' >> "$SOURCE_FRAGMENT"
           printf '\n# [susfs]\n' >> "$SOURCE_FRAGMENT"
           awk '/^# \[susfs\]/{found=1; next} /^# \[/{found=0} found && NF' "$FRAGMENT" >> "$SOURCE_FRAGMENT"
           FRAGMENT="$SOURCE_FRAGMENT"
@@ -582,7 +606,7 @@ jobs:
         STOCK_COMPILER=$(jq -r ".devices.${DEVICE_CODENAME}.stock_kernel.compiler_info // empty" "$PROFILE_FILE")
         STOCK_BUILD_TIMESTAMP=$(jq -r ".devices.${DEVICE_CODENAME}.stock_kernel.build_timestamp // empty" "$PROFILE_FILE")
 
-        # 5.10–6.1: Makefile prepends KERNELVERSION, setlocalversion outputs suffix only
+        # 5.10â€“6.1: Makefile prepends KERNELVERSION, setlocalversion outputs suffix only
         # 6.6+: Makefile delegates entirely to setlocalversion, must output full version
         MAJOR=${KERNEL_VER%%.*}
         MINOR=${KERNEL_VER#*.}
@@ -612,6 +636,8 @@ jobs:
 
         if [ -n "$STOCK_BUILD_TIMESTAMP" ]; then
           echo "KBUILD_BUILD_TIMESTAMP=$STOCK_BUILD_TIMESTAMP" >> "$GITHUB_ENV"
+          SOURCE_DATE_EPOCH=$(date -u -d "$STOCK_BUILD_TIMESTAMP" +%s 2>/dev/null || echo 1737466783)
+          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> "$GITHUB_ENV"
         fi
         {
           echo "KBUILD_BUILD_USER=$STOCK_BUILD_USER"
@@ -626,9 +652,9 @@ jobs:
         LTO_MODE=thin
         [[ "$ANDROID_VER" == android16* || "$KERNEL_VER" == "6.12" ]] && LTO_MODE=none
         if [ -f "build/build.sh" ]; then
-          KMI_SYMBOL_LIST_STRICT_MODE=0 HOSTLD=/usr/bin/ld.lld GKI_DEFCONFIG_FRAGMENT="$DEFCONFIG_FRAGMENT" LTO=$LTO_MODE KBUILD_BUILD_TIMESTAMP="${KBUILD_BUILD_TIMESTAMP:-}" BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || BUILD_RC=$?
+          KMI_SYMBOL_LIST_STRICT_MODE=0 HOSTLD=/usr/bin/ld.lld GKI_DEFCONFIG_FRAGMENT="$DEFCONFIG_FRAGMENT" LTO=$LTO_MODE KBUILD_BUILD_TIMESTAMP="${KBUILD_BUILD_TIMESTAMP:-}" SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-}" BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || BUILD_RC=$?
         else
-          # Prebuilt clang sysroot lacks glibc 2.39 C23 symbols — link against system libc
+          # Prebuilt clang sysroot lacks glibc 2.39 C23 symbols â€” link against system libc
           if [ -f common/tools/bpf/resolve_btfids/Makefile ]; then
             echo 'override KBUILD_HOSTLDFLAGS += --sysroot=/' >> common/tools/bpf/resolve_btfids/Makefile
             echo 'override LDFLAGS += --sysroot=/' >> common/tools/bpf/resolve_btfids/Makefile
