@@ -30,27 +30,35 @@ jobs:
           - artifact_name: A134-R0-resukisu-6.1.99
             add_susfs_base: false
             add_enhanced_susfs: false
+            susfs_commit: ""
+            add_kpm: false
             force_sus_mount: false
             allow_sus_mount: false
             susfs_enable_log: true
             add_stealth_policy: false
-          - artifact_name: A134-S0-susfs-base-6.1.99
+          - artifact_name: A134-S0-susfs-2.1-minimal-6.1.99
             add_susfs_base: true
             add_enhanced_susfs: false
+            susfs_commit: 9bf72ec2c83d40f194b936cabbc64ce342e005bf
+            add_kpm: false
             force_sus_mount: true
             allow_sus_mount: true
             susfs_enable_log: true
             add_stealth_policy: true
-          - artifact_name: A134-S1-susfs-debug-6.1.99
+          - artifact_name: A134-K0-kpm-minimal-6.1.99
             add_susfs_base: true
-            add_enhanced_susfs: true
+            add_enhanced_susfs: false
+            susfs_commit: 9bf72ec2c83d40f194b936cabbc64ce342e005bf
+            add_kpm: true
             force_sus_mount: true
             allow_sus_mount: true
             susfs_enable_log: true
             add_stealth_policy: true
-          - artifact_name: A134-FINAL-stealth-6.1.99
+          - artifact_name: A134-F0-final-minimal-6.1.99
             add_susfs_base: true
-            add_enhanced_susfs: true
+            add_enhanced_susfs: false
+            susfs_commit: 9bf72ec2c83d40f194b936cabbc64ce342e005bf
+            add_kpm: true
             force_sus_mount: true
             allow_sus_mount: true
             susfs_enable_log: false
@@ -66,6 +74,7 @@ jobs:
       stock_identity_codename: oriole
       kernel_commit: 8dc7d7757edd922ed1e79851711dc2c47bfcf227
       sukisu_commit: 2c68261c56f8adf177ebb4c0369bb8b54e6f43b1
+      susfs_commit: ${{ matrix.susfs_commit }}
       artifact_name: ${{ matrix.artifact_name }}
       diagnostic_mode: true
       build_pixel_boot: true
@@ -78,7 +87,7 @@ jobs:
       add_zram: false
       add_bbg: false
       add_overlayfs_support: false
-      add_kpm: true
+      add_kpm: ${{ matrix.add_kpm }}
       add_ptrace_fix: false
       add_perf_patches: false
       add_module_version_bypass: false
