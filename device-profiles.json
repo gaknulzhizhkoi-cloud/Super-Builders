@@ -34,14 +34,17 @@
       }
     },
     "oriole_134": {
-      "name": "Google Pixel 6 (6.1.134 candidate)",
+      "name": "Google Pixel 6 (6.1.134 latest candidate)",
       "codename": "oriole",
       "android_version": "android14",
       "kernel_version": "6.1",
       "sub_level": "134",
       "os_patch_level": "2025-05",
       "kernel_commit": "8dc7d7757edd922ed1e79851711dc2c47bfcf227",
-      "resukisu_commit": "d17b74fda72050ee2b8d5c0eb73d051ae64e7956",
+      "resukisu_commit": "2c68261c56f8adf177ebb4c0369bb8b54e6f43b1",
+      "kernelsu_next_commit": "f1b64f440f3cd170e2a86d7816bef26fbdee1caa",
+      "susfs_commit": "c50329543c5f89f506cdbeb519a5f11bccec9dbe",
+      "zeromount_commit": "c3cb7ffdf749f2441928ec47798615a4c79fab65",
       "stock_kernel": {
         "release": "-android14-11-gd7dac4b14270-ab12946699",
         "version_string": "#1 SMP PREEMPT Tue Jan 21 13:39:43 UTC 2025",
