@@ -22,145 +22,61 @@ jobs:
       contents: read
       actions: write
 
-  build:
+  stealth-build:
     needs: [download-dependencies]
     strategy:
       fail-fast: false
       matrix:
         include:
-          - artifact_name: G0-stock-common
-            sub_level: "99"
-            os_patch_level: "2024-10"
-            kernel_commit: d7dac4b14270c5a49bf0bcc32a4505c0657b3be8
-            stock_identity_codename: ""
-            add_resukisu: false
+          - artifact_name: A134-R0-resukisu-6.1.99
             add_susfs_base: false
             add_enhanced_susfs: false
-            add_zeromount: false
-            add_ksu_safety: false
-          - artifact_name: R0-resukisu
-            sub_level: "99"
-            os_patch_level: "2024-10"
-            kernel_commit: d7dac4b14270c5a49bf0bcc32a4505c0657b3be8
-            stock_identity_codename: ""
-            add_resukisu: true
-            add_susfs_base: false
-            add_enhanced_susfs: false
-            add_zeromount: false
-            add_ksu_safety: false
-          - artifact_name: S0-susfs-base
-            sub_level: "99"
-            os_patch_level: "2024-10"
-            kernel_commit: d7dac4b14270c5a49bf0bcc32a4505c0657b3be8
-            stock_identity_codename: ""
-            add_resukisu: true
-            add_susfs_base: true
-            add_enhanced_susfs: false
-            add_zeromount: false
-            add_ksu_safety: false
-          - artifact_name: S1-enhanced
-            sub_level: "99"
-            os_patch_level: "2024-10"
-            kernel_commit: d7dac4b14270c5a49bf0bcc32a4505c0657b3be8
-            stock_identity_codename: ""
-            add_resukisu: true
+            force_sus_mount: false
+            allow_sus_mount: false
+            susfs_enable_log: true
+            add_stealth_policy: false
+          - artifact_name: A134-S1-susfs-debug-6.1.99
             add_susfs_base: true
             add_enhanced_susfs: true
-            add_zeromount: false
-            add_ksu_safety: false
-          - artifact_name: Z0-zeromount
-            sub_level: "99"
-            os_patch_level: "2024-10"
-            kernel_commit: d7dac4b14270c5a49bf0bcc32a4505c0657b3be8
-            stock_identity_codename: ""
-            add_resukisu: true
+            force_sus_mount: true
+            allow_sus_mount: true
+            susfs_enable_log: true
+            add_stealth_policy: true
+          - artifact_name: A134-FINAL-stealth-6.1.99
             add_susfs_base: true
             add_enhanced_susfs: true
-            add_zeromount: true
-            add_ksu_safety: false
-          - artifact_name: K0-safety
-            sub_level: "99"
-            os_patch_level: "2024-10"
-            kernel_commit: d7dac4b14270c5a49bf0bcc32a4505c0657b3be8
-            stock_identity_codename: ""
-            add_resukisu: true
-            add_susfs_base: true
-            add_enhanced_susfs: true
-            add_zeromount: false
-            add_ksu_safety: true
-          - artifact_name: FULL-minimal
-            sub_level: "99"
-            os_patch_level: "2024-10"
-            kernel_commit: d7dac4b14270c5a49bf0bcc32a4505c0657b3be8
-            stock_identity_codename: ""
-            add_resukisu: true
-            add_susfs_base: true
-            add_enhanced_susfs: true
-            add_zeromount: true
-            add_ksu_safety: true
-          - artifact_name: A134-G0-stock
-            sub_level: "134"
-            os_patch_level: "2025-05"
-            kernel_commit: 8dc7d7757edd922ed1e79851711dc2c47bfcf227
-            stock_identity_codename: oriole
-            add_resukisu: false
-            add_susfs_base: false
-            add_enhanced_susfs: false
-            add_zeromount: false
-            add_ksu_safety: false
-          - artifact_name: A134-R0-resukisu
-            sub_level: "134"
-            os_patch_level: "2025-05"
-            kernel_commit: 8dc7d7757edd922ed1e79851711dc2c47bfcf227
-            stock_identity_codename: oriole
-            add_resukisu: true
-            add_susfs_base: false
-            add_enhanced_susfs: false
-            add_zeromount: false
-            add_ksu_safety: false
-          - artifact_name: A134-S0-susfs-base
-            sub_level: "134"
-            os_patch_level: "2025-05"
-            kernel_commit: 8dc7d7757edd922ed1e79851711dc2c47bfcf227
-            stock_identity_codename: oriole
-            add_resukisu: true
-            add_susfs_base: true
-            add_enhanced_susfs: false
-            add_zeromount: false
-            add_ksu_safety: false
-          - artifact_name: A134-FULL-minimal
-            sub_level: "134"
-            os_patch_level: "2025-05"
-            kernel_commit: 8dc7d7757edd922ed1e79851711dc2c47bfcf227
-            stock_identity_codename: oriole
-            add_resukisu: true
-            add_susfs_base: true
-            add_enhanced_susfs: true
-            add_zeromount: true
-            add_ksu_safety: true
+            force_sus_mount: true
+            allow_sus_mount: true
+            susfs_enable_log: false
+            add_stealth_policy: true
     uses: ./.github/workflows/build-resukisu.yml
     with:
       android_version: android14
       kernel_version: "6.1"
-      sub_level: ${{ matrix.sub_level }}
-      os_patch_level: ${{ matrix.os_patch_level }}
+      sub_level: "134"
+      spoof_sublevel: "99"
+      os_patch_level: "2025-05"
       device_codename: oriole
-      stock_identity_codename: ${{ matrix.stock_identity_codename }}
-      kernel_commit: ${{ matrix.kernel_commit }}
-      sukisu_commit: d17b74fda72050ee2b8d5c0eb73d051ae64e7956
+      stock_identity_codename: oriole
+      kernel_commit: 8dc7d7757edd922ed1e79851711dc2c47bfcf227
+      sukisu_commit: 2c68261c56f8adf177ebb4c0369bb8b54e6f43b1
       artifact_name: ${{ matrix.artifact_name }}
       diagnostic_mode: true
       build_pixel_boot: true
-      add_resukisu: ${{ matrix.add_resukisu }}
+      add_resukisu: true
       add_susfs: true
       add_susfs_base: ${{ matrix.add_susfs_base }}
       add_enhanced_susfs: ${{ matrix.add_enhanced_susfs }}
-      add_zeromount: ${{ matrix.add_zeromount }}
-      add_ksu_safety: ${{ matrix.add_ksu_safety }}
+      add_zeromount: false
+      add_ksu_safety: false
       add_zram: false
       add_bbg: false
       add_overlayfs_support: false
-      add_kpm: false
+      add_kpm: true
       add_ptrace_fix: false
       add_perf_patches: false
       add_module_version_bypass: false
+      force_sus_mount: ${{ matrix.force_sus_mount }}
+      allow_sus_mount: ${{ matrix.allow_sus_mount }}
+      susfs_enable_log: ${{ matrix.susfs_enable_log }}
+      add_stealth_policy: ${{ matrix.add_stealth_policy }}
