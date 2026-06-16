@@ -9,6 +9,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/build-resukisu.yml"
+      - ".github/workflows/build-ksu-next.yml"
       - ".github/workflows/pixel6-latest-diagnostic.yml"
       - "android14-6.1/**"
       - "device-profiles.json"
@@ -66,3 +67,22 @@ jobs:
       add_ptrace_fix: false
       add_perf_patches: false
       add_module_version_bypass: false
+
+  kernelsu-next-latest-compile-probe:
+    needs: [download-dependencies]
+    uses: ./.github/workflows/build-ksu-next.yml
+    with:
+      android_version: android14
+      kernel_version: "6.1"
+      sub_level: "134"
+      os_patch_level: "2025-05"
+      device_codename: oriole_134
+      sukisu_commit: f1b64f440f3cd170e2a86d7816bef26fbdee1caa
+      add_susfs: true
+      add_zeromount: true
+      add_zram: false
+      add_bbg: false
+      add_overlayfs_support: false
+      add_kpm: false
+      add_ptrace_fix: false
+      add_perf_patches: false
