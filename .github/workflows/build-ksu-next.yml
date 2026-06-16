@@ -236,6 +236,9 @@ jobs:
       run: |
         FIX="$GITHUB_WORKSPACE/$VERSION_DIR/build-helpers/fix-susfs-compat.sh"
         [ -f "$FIX" ] && bash "$FIX" . "$SUBLEVEL" "$ANDROID_VER" "$KERNEL_VER" "$KERNEL_PATCHES" || true
+        # pershoot dev-susfs calls susfs_ends_with() — add stub
+        FIX_PER="$GITHUB_WORKSPACE/$VERSION_DIR/build-helpers/fix-pershoot-susfs-ends-with.sh"
+        [ -f "$FIX_PER" ] && bash "$FIX_PER" || true
 
     - name: Apply Kernel Patches
       if: inputs.add_ptrace_fix || inputs.add_perf_patches
