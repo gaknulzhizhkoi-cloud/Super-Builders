@@ -20,7 +20,7 @@ if [ -z "$DOT_CONFIG" ]; then
 fi
 
 if [ -z "$DOT_CONFIG" ]; then
-  echo "::warning::No .config found — skipping config report"
+  echo "::warning::No .config found â€” skipping config report"
   exit 0
 fi
 
@@ -51,7 +51,9 @@ fi
     CONFIG_KSU_SUSFS_HIDDEN_NAME \
     CONFIG_KSU_SUSFS_HARDENED \
     CONFIG_ZEROMOUNT \
-    CONFIG_KPM; do
+    CONFIG_KPM \
+    CONFIG_KSU_MULTI_MANAGER_SUPPORT \
+    CONFIG_KSU_TOOLKIT_SUPPORT; do
 
     val=$(grep "^${symbol}=" "$DOT_CONFIG" 2>/dev/null | head -1 | cut -d= -f2)
     not_set=$(grep "# ${symbol} is not set" "$DOT_CONFIG" 2>/dev/null)
@@ -61,7 +63,7 @@ fi
     elif [ -n "$not_set" ]; then
       echo "| \`${symbol}\` | not set |"
     else
-      echo "| \`${symbol}\` | — |"
+      echo "| \`${symbol}\` | â€” |"
     fi
   done
 
