@@ -61,6 +61,9 @@ on:
       device_codename:
         type: string
         default: ""
+      stock_identity_codename:
+        type: string
+        default: ""
       kernel_commit:
         type: string
         default: ""
@@ -265,6 +268,12 @@ jobs:
       if: inputs.add_susfs && inputs.add_susfs_base
       working-directory: ${{ env.KERNEL_ROOT }}/common
       run: |
+        if ! grep -q '^#include <linux/susfs_def.h>$' fs/exec.c; then
+          perl -0pi -e 's|#include <linux/coredump.h>\n\n|#include <linux/coredump.h>\n\n#ifdef CONFIG_KSU_SUSFS\n#include <linux/susfs_def.h>\n#endif\n|s' fs/exec.c
+        fi
+        if ! grep -q '^#include <linux/susfs_def.h>$' fs/proc/base.c; then
+          perl -0pi -e 's|#include <linux/cpufreq_times.h>\n|#include <linux/cpufreq_times.h>\n#ifdef CONFIG_KSU_SUSFS_SUS_MAP\n#include <linux/susfs_def.h>\n#endif\n\n|s' fs/proc/base.c
+        fi
         patch -p1 --fuzz=0 --no-backup-if-mismatch < "$GITHUB_WORKSPACE/$VERSION_DIR/ReSukiSU/patches/50_add_susfs_in_gki-${ANDROID_VER}-${KERNEL_VER}.patch"
 
     - name: Apply Enhanced SUSFS Patch
@@ -418,6 +427,7 @@ jobs:
       working-directory: ${{ env.KERNEL_ROOT }}/common
       env:
         INPUT_CODENAME: ${{ inputs.device_codename }}
+        STOCK_IDENTITY_CODENAME: ${{ inputs.stock_identity_codename }}
         KERNEL_VER: ${{ inputs.kernel_version }}
       run: |
         PROFILE_FILE="$GITHUB_WORKSPACE/device-profiles.json"
@@ -427,7 +437,9 @@ jobs:
           exit 0
         fi
 
-        if [ -n "$INPUT_CODENAME" ] && [ "$INPUT_CODENAME" != "generic" ]; then
+        if [ -n "$STOCK_IDENTITY_CODENAME" ] && [ "$STOCK_IDENTITY_CODENAME" != "generic" ]; then
+          DEVICE_CODENAME="$STOCK_IDENTITY_CODENAME"
+        elif [ -n "$INPUT_CODENAME" ] && [ "$INPUT_CODENAME" != "generic" ]; then
           PROFILE_SL=$(jq -r ".devices.${INPUT_CODENAME}.sub_level // empty" "$PROFILE_FILE")
           if [ "$PROFILE_SL" = "$SUBLEVEL" ]; then
             DEVICE_CODENAME="$INPUT_CODENAME"
@@ -452,7 +464,7 @@ jobs:
         STOCK_COMPILER=$(jq -r ".devices.${DEVICE_CODENAME}.stock_kernel.compiler_info // empty" "$PROFILE_FILE")
         STOCK_BUILD_TIMESTAMP=$(jq -r ".devices.${DEVICE_CODENAME}.stock_kernel.build_timestamp // empty" "$PROFILE_FILE")
 
-        # 5.10–6.1: Makefile prepends KERNELVERSION, setlocalversion outputs suffix only
+        # 5.10â€“6.1: Makefile prepends KERNELVERSION, setlocalversion outputs suffix only
         # 6.6+: Makefile delegates entirely to setlocalversion, must output full version
         MAJOR=${KERNEL_VER%%.*}
         MINOR=${KERNEL_VER#*.}
@@ -498,7 +510,7 @@ jobs:
         if [ -f "build/build.sh" ]; then
           KMI_SYMBOL_LIST_STRICT_MODE=0 HOSTLD=/usr/bin/ld.lld GKI_DEFCONFIG_FRAGMENT="$DEFCONFIG_FRAGMENT" LTO=$LTO_MODE KBUILD_BUILD_TIMESTAMP="${KBUILD_BUILD_TIMESTAMP:-}" BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || BUILD_RC=$?
         else
-          # Prebuilt clang sysroot lacks glibc 2.39 C23 symbols — link against system libc
+          # Prebuilt clang sysroot lacks glibc 2.39 C23 symbols â€” link against system libc
           if [ -f common/tools/bpf/resolve_btfids/Makefile ]; then
             echo 'override KBUILD_HOSTLDFLAGS += --sysroot=/' >> common/tools/bpf/resolve_btfids/Makefile
             echo 'override LDFLAGS += --sysroot=/' >> common/tools/bpf/resolve_btfids/Makefile
