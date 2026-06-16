@@ -10,6 +10,7 @@ on:
     paths:
       - ".github/workflows/build-resukisu.yml"
       - ".github/workflows/pixel6-diagnostic.yml"
+      - ".github/workflows/pixel6-a134-diagnostic.yml"
       - "android14-6.1/**"
       - "device-profiles.json"
 
@@ -26,21 +27,124 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { artifact_name: G0-stock-common, add_resukisu: false, add_susfs_base: false, add_enhanced_susfs: false, add_zeromount: false, add_ksu_safety: false }
-          - { artifact_name: R0-resukisu, add_resukisu: true, add_susfs_base: false, add_enhanced_susfs: false, add_zeromount: false, add_ksu_safety: false }
-          - { artifact_name: S0-susfs-base, add_resukisu: true, add_susfs_base: true, add_enhanced_susfs: false, add_zeromount: false, add_ksu_safety: false }
-          - { artifact_name: S1-enhanced, add_resukisu: true, add_susfs_base: true, add_enhanced_susfs: true, add_zeromount: false, add_ksu_safety: false }
-          - { artifact_name: Z0-zeromount, add_resukisu: true, add_susfs_base: true, add_enhanced_susfs: true, add_zeromount: true, add_ksu_safety: false }
-          - { artifact_name: K0-safety, add_resukisu: true, add_susfs_base: true, add_enhanced_susfs: true, add_zeromount: false, add_ksu_safety: true }
-          - { artifact_name: FULL-minimal, add_resukisu: true, add_susfs_base: true, add_enhanced_susfs: true, add_zeromount: true, add_ksu_safety: true }
+          - artifact_name: G0-stock-common
+            sub_level: "99"
+            os_patch_level: "2024-10"
+            device_codename: oriole
+            kernel_commit: d7dac4b14270c5a49bf0bcc32a4505c0657b3be8
+            add_resukisu: false
+            add_susfs_base: false
+            add_enhanced_susfs: false
+            add_zeromount: false
+            add_ksu_safety: false
+          - artifact_name: R0-resukisu
+            sub_level: "99"
+            os_patch_level: "2024-10"
+            device_codename: oriole
+            kernel_commit: d7dac4b14270c5a49bf0bcc32a4505c0657b3be8
+            add_resukisu: true
+            add_susfs_base: false
+            add_enhanced_susfs: false
+            add_zeromount: false
+            add_ksu_safety: false
+          - artifact_name: S0-susfs-base
+            sub_level: "99"
+            os_patch_level: "2024-10"
+            device_codename: oriole
+            kernel_commit: d7dac4b14270c5a49bf0bcc32a4505c0657b3be8
+            add_resukisu: true
+            add_susfs_base: true
+            add_enhanced_susfs: false
+            add_zeromount: false
+            add_ksu_safety: false
+          - artifact_name: S1-enhanced
+            sub_level: "99"
+            os_patch_level: "2024-10"
+            device_codename: oriole
+            kernel_commit: d7dac4b14270c5a49bf0bcc32a4505c0657b3be8
+            add_resukisu: true
+            add_susfs_base: true
+            add_enhanced_susfs: true
+            add_zeromount: false
+            add_ksu_safety: false
+          - artifact_name: Z0-zeromount
+            sub_level: "99"
+            os_patch_level: "2024-10"
+            device_codename: oriole
+            kernel_commit: d7dac4b14270c5a49bf0bcc32a4505c0657b3be8
+            add_resukisu: true
+            add_susfs_base: true
+            add_enhanced_susfs: true
+            add_zeromount: true
+            add_ksu_safety: false
+          - artifact_name: K0-safety
+            sub_level: "99"
+            os_patch_level: "2024-10"
+            device_codename: oriole
+            kernel_commit: d7dac4b14270c5a49bf0bcc32a4505c0657b3be8
+            add_resukisu: true
+            add_susfs_base: true
+            add_enhanced_susfs: true
+            add_zeromount: false
+            add_ksu_safety: true
+          - artifact_name: FULL-minimal
+            sub_level: "99"
+            os_patch_level: "2024-10"
+            device_codename: oriole
+            kernel_commit: d7dac4b14270c5a49bf0bcc32a4505c0657b3be8
+            add_resukisu: true
+            add_susfs_base: true
+            add_enhanced_susfs: true
+            add_zeromount: true
+            add_ksu_safety: true
+          - artifact_name: A134-G0-stock
+            sub_level: "134"
+            os_patch_level: "2025-05"
+            device_codename: oriole_134
+            kernel_commit: 8dc7d7757edd922ed1e79851711dc2c47bfcf227
+            add_resukisu: false
+            add_susfs_base: false
+            add_enhanced_susfs: false
+            add_zeromount: false
+            add_ksu_safety: false
+          - artifact_name: A134-R0-resukisu
+            sub_level: "134"
+            os_patch_level: "2025-05"
+            device_codename: oriole_134
+            kernel_commit: 8dc7d7757edd922ed1e79851711dc2c47bfcf227
+            add_resukisu: true
+            add_susfs_base: false
+            add_enhanced_susfs: false
+            add_zeromount: false
+            add_ksu_safety: false
+          - artifact_name: A134-S0-susfs-base
+            sub_level: "134"
+            os_patch_level: "2025-05"
+            device_codename: oriole_134
+            kernel_commit: 8dc7d7757edd922ed1e79851711dc2c47bfcf227
+            add_resukisu: true
+            add_susfs_base: true
+            add_enhanced_susfs: false
+            add_zeromount: false
+            add_ksu_safety: false
+          - artifact_name: A134-FULL-minimal
+            sub_level: "134"
+            os_patch_level: "2025-05"
+            device_codename: oriole_134
+            kernel_commit: 8dc7d7757edd922ed1e79851711dc2c47bfcf227
+            add_resukisu: true
+            add_susfs_base: true
+            add_enhanced_susfs: true
+            add_zeromount: true
+            add_ksu_safety: true
     uses: ./.github/workflows/build-resukisu.yml
     with:
       android_version: android14
       kernel_version: "6.1"
-      sub_level: "99"
-      os_patch_level: "2024-10"
-      device_codename: oriole
-      kernel_commit: d7dac4b14270c5a49bf0bcc32a4505c0657b3be8
+      sub_level: ${{ matrix.sub_level }}
+      os_patch_level: ${{ matrix.os_patch_level }}
+      device_codename: ${{ matrix.device_codename }}
+      kernel_commit: ${{ matrix.kernel_commit }}
       sukisu_commit: d17b74fda72050ee2b8d5c0eb73d051ae64e7956
       artifact_name: ${{ matrix.artifact_name }}
       diagnostic_mode: true
