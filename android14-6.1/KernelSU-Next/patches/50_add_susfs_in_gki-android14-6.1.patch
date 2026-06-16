@@ -1466,13 +1466,14 @@ diff --git a/fs/exec.c b/fs/exec.c
 index 28e8203de..210c69377 100644
 --- a/fs/exec.c
 +++ b/fs/exec.c
-@@ -64,3 +64,6 @@
+@@ -64,4 +64,7 @@
  #include <linux/io_uring.h>
  #include <linux/syscall_user_dispatch.h>
  #include <linux/coredump.h>
 +#ifdef CONFIG_KSU_SUSFS
 +#include <linux/susfs_def.h>
 +#endif
+ #include <linux/uaccess.h>
 @@ -1903,6 +1906,17 @@ static int bprm_execve(struct linux_binprm *bprm,
  	return retval;
  }
@@ -2272,13 +2273,14 @@ diff --git a/fs/proc/base.c b/fs/proc/base.c
 index b0ec673a2..c33994304 100644
 --- a/fs/proc/base.c
 +++ b/fs/proc/base.c
-@@ -99,2 +99,6 @@
+@@ -99,3 +99,7 @@
  #include <linux/cn_proc.h>
  #include <linux/cpufreq_times.h>
 +#ifdef CONFIG_KSU_SUSFS_SUS_MAP
 +#include <linux/susfs_def.h>
 +#endif
 +
+ #include <trace/events/oom.h>
 @@ -914,6 +918,9 @@ static ssize_t mem_rw(struct file *file, char __user *buf,
  	ssize_t copied;
  	char *page;
