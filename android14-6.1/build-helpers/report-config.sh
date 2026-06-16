@@ -20,7 +20,7 @@ if [ -z "$DOT_CONFIG" ]; then
 fi
 
 if [ -z "$DOT_CONFIG" ]; then
-  echo "::warning::No .config found â€” skipping config report"
+  echo "::warning::No .config found - skipping config report"
   exit 0
 fi
 
@@ -63,7 +63,7 @@ fi
     elif [ -n "$not_set" ]; then
       echo "| \`${symbol}\` | not set |"
     else
-      echo "| \`${symbol}\` | â€” |"
+      echo "| \`${symbol}\` | - |"
     fi
   done
 
