@@ -8,6 +8,7 @@
 - ReLSPosed or LSPosed
 - rsTEESimulator-RS
 - TA_enhanced
+- metamount-rs
 
 BRENE remains the preferred owner of `/data/adb/ksu/bin/ksu_susfs`. This module reuses that helper when it works and only generates/apply rules around the real modules installed on the device.
 
@@ -36,6 +37,6 @@ Local overrides live under `/data/adb/resukisu-stealth/rules.d/` and `/data/adb/
 
 ## Notes
 
-- Install BRENE first, then the Zygisk/LSPosed/TEE/TA modules, then this policy module.
+- Install BRENE first, then the Zygisk/LSPosed/TEE/TA/mount-layer modules, then this policy module.
 - Keep app-specific policy out of the kernel. Add new module leaks through `rules.d` or `local.conf`.
 - The `apply` command is intentionally tolerant: unsupported SUSFS commands are logged and skipped instead of causing a boot loop.
