@@ -256,6 +256,12 @@ jobs:
       if: inputs.add_susfs && inputs.add_susfs_base
       working-directory: ${{ env.KERNEL_ROOT }}/common
       run: |
+        if ! grep -q '^#include <linux/susfs_def.h>$' fs/exec.c; then
+          perl -0pi -e 's|#include <linux/coredump.h>\n\n|#include <linux/coredump.h>\n\n#ifdef CONFIG_KSU_SUSFS\n#include <linux/susfs_def.h>\n#endif\n|s' fs/exec.c
+        fi
+        if ! grep -q '^#include <linux/susfs_def.h>$' fs/proc/base.c; then
+          perl -0pi -e 's|#include <linux/cpufreq_times.h>\n|#include <linux/cpufreq_times.h>\n#ifdef CONFIG_KSU_SUSFS_SUS_MAP\n#include <linux/susfs_def.h>\n#endif\n\n|s' fs/proc/base.c
+        fi
         patch -p1 --fuzz=0 --no-backup-if-mismatch < "$GITHUB_WORKSPACE/$VERSION_DIR/KernelSU-Next/patches/50_add_susfs_in_gki-${ANDROID_VER}-${KERNEL_VER}.patch"
 
     - name: Apply Enhanced SUSFS Patch
