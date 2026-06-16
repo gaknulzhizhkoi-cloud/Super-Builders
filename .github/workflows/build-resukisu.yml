@@ -385,6 +385,8 @@ jobs:
                  "extern __attribute__((cold)) int ksu_handle_sys_read(unsigned int fd,\n\t\t\t\tchar __user **buf_ptr, size_t *count_ptr);\n"),
                 ("#ifdef CONFIG_KSU_SUSFS\n\tif (unlikely(ksu_init_rc_hook))\n\t\tksu_handle_sys_read(fd);\n#endif\n\n\treturn ksys_read(fd, buf, count);",
                  "#ifdef CONFIG_KSU_SUSFS\n\tksu_handle_sys_read(fd, &buf, &count);\n#endif\n\n\treturn ksys_read(fd, buf, count);"),
+                ("\t\tksu_handle_sys_read(fd);",
+                 "\t\tksu_handle_sys_read(fd, &buf, &count);"),
             ],
             "fs/stat.c": [
                 ("extern bool ksu_init_rc_hook __read_mostly;\n", ""),
