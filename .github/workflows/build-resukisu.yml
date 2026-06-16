@@ -404,14 +404,16 @@ jobs:
           echo "IDENTITY_STATUS=Applied ($DEVICE_CODENAME)"
         } >> "$GITHUB_ENV"
 
-    - name: Spoof SUBLEVEL 134→99 (Pixel 6 requires KMI compat)
+    - name: Spoof SUBLEVEL → 99 (Pixel 6 requires KMI compat)
       working-directory: ${{ env.KERNEL_ROOT }}/common
       run: |
-        sed -i 's/SUBLEVEL = 134/SUBLEVEL = 99/' Makefile
+        sed -i 's/^SUBLEVEL = .*/SUBLEVEL = 99/' Makefile
         echo "SUBLEVEL spoofed: $(grep '^SUBLEVEL' Makefile)"
 
     - name: Build Kernel
       working-directory: ${{ env.KERNEL_ROOT }}
+      env:
+        SOURCE_DATE_EPOCH: 1737466783
       run: |
         BUILD_RC=0
         LTO_MODE=thin

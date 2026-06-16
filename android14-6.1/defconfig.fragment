@@ -75,5 +75,9 @@ CONFIG_TMPFS_POSIX_ACL=y
 # CONFIG_LOCKDEP is not set                          # [CHECK DEVICE FIRST]
 # CONFIG_DEBUG_LOCK_ALLOC is not set                 # [CHECK DEVICE FIRST]
 
+# [resukisu-multi-manager]
+CONFIG_KSU_MULTI_MANAGER_SUPPORT=y
+CONFIG_KSU_TOOLKIT_SUPPORT=y
+
 # [kpm]
 CONFIG_KPM=y
