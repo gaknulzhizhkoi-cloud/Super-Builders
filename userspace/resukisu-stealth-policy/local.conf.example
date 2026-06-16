@@ -1,0 +1,13 @@
+# Local rules are optional. Prefer rules.d/*.txt for larger lists.
+#
+# Syntax:
+#   sus_path /path [max_tries]
+#   sus_path_loop /path [max_tries]
+#   sus_mount /mount/path
+#   sus_map /real/mmap/file/or/mount/path
+#   sus_kstat /path
+#   open_redirect /original/path /redirect/path [0|1]
+#
+# Examples:
+#   sus_path /data/adb/modules/my-private-module 15
+#   sus_map /data/adb/modules/my-private-module/lib/arm64-v8a/libpayload.so

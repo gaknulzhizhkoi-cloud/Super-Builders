@@ -1,0 +1,6 @@
+id=resukisu-stealth-policy
+name=ReSukiSU Stealth Policy
+version=0.1.0
+versionCode=1
+author=Codex + gaknulzhizhkoi-cloud
+description=Rules-driven SUSFS policy overlay for BRENE, BreZygisk/ReZygisk, ReLSPosed/LSPosed, rsTEESimulator-RS, TA_enhanced, and BreWheel.
