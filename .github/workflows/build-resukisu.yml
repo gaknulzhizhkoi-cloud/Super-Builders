@@ -326,6 +326,66 @@ jobs:
         FIX="$GITHUB_WORKSPACE/$VERSION_DIR/build-helpers/fix-susfs-compat.sh"
         [ -f "$FIX" ] && bash "$FIX" . "$SUBLEVEL" "$ANDROID_VER" "$KERNEL_VER" "$KERNEL_PATCHES" || true
 
+    - name: Adapt ReSukiSU Latest Inline Hooks
+      if: inputs.add_resukisu && inputs.add_susfs && inputs.add_susfs_base
+      working-directory: ${{ env.KERNEL_ROOT }}/common
+      run: |
+        python3 - <<'PY'
+        from pathlib import Path
+
+        rewrites = {
+            "drivers/input/input.c": [
+                ("extern bool ksu_input_hook __read_mostly;\n", ""),
+                ("\tif (unlikely(ksu_input_hook))\n\t\tksu_handle_input_handle_event(&type, &code, &value);",
+                 "\tksu_handle_input_handle_event(&type, &code, &value);"),
+            ],
+            "fs/exec.c": [
+                ("extern bool ksu_execveat_hook __read_mostly;\n", ""),
+                ("if (unlikely(ksu_execveat_hook || !susfs_is_sdcard_android_data_decrypted)) {",
+                 "if (unlikely(!susfs_is_sdcard_android_data_decrypted)) {"),
+            ],
+            "fs/read_write.c": [
+                ("extern bool ksu_init_rc_hook __read_mostly;\n", ""),
+                ("extern __attribute__((cold)) void ksu_handle_sys_read(unsigned int fd);\n",
+                 "extern __attribute__((cold)) int ksu_handle_sys_read(unsigned int fd,\n\t\t\t\tchar __user **buf_ptr, size_t *count_ptr);\n"),
+                ("#ifdef CONFIG_KSU_SUSFS\n\tif (unlikely(ksu_init_rc_hook))\n\t\tksu_handle_sys_read(fd);\n#endif\n\n\treturn ksys_read(fd, buf, count);",
+                 "#ifdef CONFIG_KSU_SUSFS\n\tksu_handle_sys_read(fd, &buf, &count);\n#endif\n\n\treturn ksys_read(fd, buf, count);"),
+            ],
+            "fs/stat.c": [
+                ("extern bool ksu_init_rc_hook __read_mostly;\n", ""),
+                ("#ifdef CONFIG_KSU_SUSFS\n\tif (unlikely(ksu_init_rc_hook)) {\n\t\tksu_handle_vfs_fstat(fd, &stat->size);\n\t}\n#endif // #ifdef CONFIG_KSU_SUSFS",
+                 "#ifdef CONFIG_KSU_SUSFS\n\tksu_handle_vfs_fstat(fd, &stat->size);\n#endif // #ifdef CONFIG_KSU_SUSFS"),
+            ],
+        }
+
+        for file_name, replacements in rewrites.items():
+            path = Path(file_name)
+            if not path.exists():
+                continue
+            text = path.read_text()
+            original = text
+            for old, new in replacements:
+                text = text.replace(old, new)
+            if text != original:
+                path.write_text(text)
+                print(f"adapted {file_name}")
+
+        forbidden = {
+            "drivers/input/input.c": ["ksu_input_hook"],
+            "fs/exec.c": ["ksu_execveat_hook"],
+            "fs/read_write.c": ["ksu_init_rc_hook"],
+            "fs/stat.c": ["ksu_init_rc_hook"],
+        }
+        for file_name, needles in forbidden.items():
+            path = Path(file_name)
+            if not path.exists():
+                continue
+            text = path.read_text()
+            for needle in needles:
+                if needle in text:
+                    raise SystemExit(f"forbidden latest ReSukiSU inline hook token remains: {needle} in {file_name}")
+        PY
+
     - name: Apply Kernel Patches
       if: inputs.add_ptrace_fix || inputs.add_perf_patches
       working-directory: ${{ env.KERNEL_ROOT }}/common
