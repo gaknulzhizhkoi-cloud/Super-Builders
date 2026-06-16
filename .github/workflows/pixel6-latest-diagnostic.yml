@@ -68,8 +68,27 @@ jobs:
       add_perf_patches: false
       add_module_version_bypass: false
 
-  kernelsu-next-latest-compile-probe:
+  kernelsu-next-latest:
     needs: [download-dependencies]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - artifact_name: L-KN-A134-ksu-next
+            add_susfs_base: false
+            add_enhanced_susfs: false
+            add_zeromount: false
+            add_ksu_safety: false
+          - artifact_name: L-KN-A134-susfs-base
+            add_susfs_base: true
+            add_enhanced_susfs: false
+            add_zeromount: false
+            add_ksu_safety: false
+          - artifact_name: L-KN-A134-full-minimal
+            add_susfs_base: true
+            add_enhanced_susfs: true
+            add_zeromount: true
+            add_ksu_safety: true
     uses: ./.github/workflows/build-ksu-next.yml
     with:
       android_version: android14
@@ -77,12 +96,20 @@ jobs:
       sub_level: "134"
       os_patch_level: "2025-05"
       device_codename: oriole_134
+      kernel_commit: 8dc7d7757edd922ed1e79851711dc2c47bfcf227
       sukisu_commit: f1b64f440f3cd170e2a86d7816bef26fbdee1caa
+      artifact_name: ${{ matrix.artifact_name }}
+      diagnostic_mode: true
+      build_pixel_boot: true
       add_susfs: true
-      add_zeromount: true
+      add_susfs_base: ${{ matrix.add_susfs_base }}
+      add_enhanced_susfs: ${{ matrix.add_enhanced_susfs }}
+      add_zeromount: ${{ matrix.add_zeromount }}
+      add_ksu_safety: ${{ matrix.add_ksu_safety }}
       add_zram: false
       add_bbg: false
       add_overlayfs_support: false
       add_kpm: false
       add_ptrace_fix: false
       add_perf_patches: false
+      add_module_version_bypass: false
