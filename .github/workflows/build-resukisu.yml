@@ -390,18 +390,17 @@ jobs:
             text = susfs.read_text()
             if "susfs_extra_works" not in text:
                 marker = "#endif // #ifdef CONFIG_KSU_SUSFS_SUS_PATH\n"
-                compat = r'''
-#ifdef CONFIG_KSU_SUSFS_SUS_PATH
-static void susfs_extra_work_fn(struct work_struct *work)
-{
-	susfs_run_sus_path_loop(current_uid().val);
-}
-#else
-static void susfs_extra_work_fn(struct work_struct *work) { }
-#endif
-DECLARE_WORK(susfs_extra_works, susfs_extra_work_fn);
-
-'''
+                compat = (
+                    "#ifdef CONFIG_KSU_SUSFS_SUS_PATH\n"
+                    "static void susfs_extra_work_fn(struct work_struct *work)\n"
+                    "{\n"
+                    "\tsusfs_run_sus_path_loop(current_uid().val);\n"
+                    "}\n"
+                    "#else\n"
+                    "static void susfs_extra_work_fn(struct work_struct *work) { }\n"
+                    "#endif\n"
+                    "DECLARE_WORK(susfs_extra_works, susfs_extra_work_fn);\n\n"
+                )
                 if marker not in text:
                     raise SystemExit("could not find SUS_PATH section end in fs/susfs.c")
                 text = text.replace(marker, marker + compat, 1)
