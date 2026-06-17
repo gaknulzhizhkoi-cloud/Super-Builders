@@ -52,6 +52,9 @@ on:
       add_kpm:
         type: boolean
         default: false
+      add_kpatch_next_module:
+        type: boolean
+        default: false
       add_ptrace_fix:
         type: boolean
         default: true
@@ -788,6 +791,32 @@ jobs:
           exit 1
         fi
 
+    - name: Patch Image with KPatch-Next
+      if: inputs.add_kpatch_next_module
+      run: |
+        API="https://api.github.com/repos/KernelSU-Next/KPatch-Next/releases/latest"
+        mkdir -p "$GITHUB_WORKSPACE/kpatch-next"
+        curl -fsSL "$API" -o "$GITHUB_WORKSPACE/kpatch-next/release.json"
+        download_asset() {
+          local name="$1"
+          local out="$2"
+          local url
+          url=$(jq -r --arg name "$name" '.assets[] | select(.name == $name) | .browser_download_url' "$GITHUB_WORKSPACE/kpatch-next/release.json" | head -1)
+          [ -n "$url" ] && [ "$url" != "null" ] || { echo "FATAL: KPatch-Next asset not found: $name"; exit 1; }
+          curl -fL "$url" -o "$out"
+        }
+        download_asset kptools-linux "$GITHUB_WORKSPACE/kpatch-next/kptools-linux"
+        download_asset kpimg-linux "$GITHUB_WORKSPACE/kpatch-next/kpimg-linux"
+        download_asset kpatch-android "$GITHUB_WORKSPACE/kpatch-next/kpatch-android"
+        chmod +x "$GITHUB_WORKSPACE/kpatch-next/kptools-linux"
+        "$GITHUB_WORKSPACE/kpatch-next/kptools-linux" -v -k "$GITHUB_WORKSPACE/kpatch-next/kpimg-linux"
+        "$GITHUB_WORKSPACE/kpatch-next/kptools-linux" -p \
+          -i "$ANYKERNEL3/Image" \
+          -k "$GITHUB_WORKSPACE/kpatch-next/kpimg-linux" \
+          -o "$GITHUB_WORKSPACE/Image.kpatch-next"
+        "$GITHUB_WORKSPACE/kpatch-next/kptools-linux" -l -i "$GITHUB_WORKSPACE/Image.kpatch-next" | tee "$GITHUB_WORKSPACE/kpatch-next/image-info.txt"
+        grep -q '^patched=true$' "$GITHUB_WORKSPACE/kpatch-next/image-info.txt"
+
     - name: Build and Verify Pixel 6 boot.img
       if: inputs.build_pixel_boot
       run: |
@@ -795,6 +824,14 @@ jobs:
         HELPER="$GITHUB_WORKSPACE/$VERSION_DIR/build-helpers/pixel6-boot.py"
         python3 "$HELPER" build --image "$ANYKERNEL3/Image" --boot "$GITHUB_WORKSPACE/boot.img"
         python3 "$HELPER" verify --boot "$GITHUB_WORKSPACE/boot.img" --expected-release "$EXPECTED_RELEASE"
+
+    - name: Build and Verify KPatch-Next Pixel 6 boot.img
+      if: inputs.build_pixel_boot && inputs.add_kpatch_next_module
+      run: |
+        EXPECTED_RELEASE="${KERNEL_VER}.${SUBLEVEL}$(jq -r '.devices.oriole.stock_kernel.release' "$GITHUB_WORKSPACE/device-profiles.json")"
+        HELPER="$GITHUB_WORKSPACE/$VERSION_DIR/build-helpers/pixel6-boot.py"
+        python3 "$HELPER" build --image "$GITHUB_WORKSPACE/Image.kpatch-next" --boot "$GITHUB_WORKSPACE/boot-kpatch-next.img"
+        python3 "$HELPER" verify --boot "$GITHUB_WORKSPACE/boot-kpatch-next.img" --expected-release "$EXPECTED_RELEASE"
 
     - name: Scan Patch Rejects
       if: always()
@@ -830,6 +867,66 @@ jobs:
       with:
         name: ${{ env.FILE_NAME }}-boot
         path: ./boot.img
+        if-no-files-found: error
+        compression-level: 0
+
+    - name: Upload KPatch-Next Pixel 6 boot.img
+      if: inputs.build_pixel_boot && inputs.add_kpatch_next_module
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ env.FILE_NAME }}-kpatch-next-boot
+        path: ./boot-kpatch-next.img
+        if-no-files-found: error
+        compression-level: 0
+
+    - name: Upload KPatch-Next Core Assets
+      if: inputs.add_kpatch_next_module
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ env.FILE_NAME }}-KPatch-Next-Core
+        path: |
+          kpatch-next/kptools-linux
+          kpatch-next/kpimg-linux
+          kpatch-next/kpatch-android
+          kpatch-next/image-info.txt
+        if-no-files-found: error
+        compression-level: 0
+
+    - name: Download KPatch-Next Module
+      if: inputs.add_kpatch_next_module
+      run: |
+        API="https://api.github.com/repos/KernelSU-Next/KPatch-Next-Module/releases/latest"
+        curl -fsSL "$API" -o "$GITHUB_WORKSPACE/kpatch-next-release.json"
+        ASSET_URL=$(jq -r '.assets[] | select(.name == "KPatch-Next-Module.zip") | .browser_download_url' "$GITHUB_WORKSPACE/kpatch-next-release.json" | head -1)
+        if [ -z "$ASSET_URL" ] || [ "$ASSET_URL" = "null" ]; then
+          ASSET_URL=$(jq -r '.assets[] | select(.name | test("\\.zip$")) | .browser_download_url' "$GITHUB_WORKSPACE/kpatch-next-release.json" | head -1)
+        fi
+        [ -n "$ASSET_URL" ] && [ "$ASSET_URL" != "null" ] || { echo "FATAL: KPatch-Next Module zip asset not found"; exit 1; }
+        curl -fL "$ASSET_URL" -o "$GITHUB_WORKSPACE/kpatch-next-module.zip"
+        python3 - <<'PY'
+        from pathlib import Path
+        import zipfile
+
+        zip_path = Path("kpatch-next-module.zip")
+        if not zip_path.is_file() or zip_path.stat().st_size == 0:
+            raise SystemExit("KPatch-Next module zip is empty or missing")
+        with zipfile.ZipFile(zip_path) as archive:
+            bad = archive.testzip()
+            if bad:
+                raise SystemExit(f"KPatch-Next module zip failed integrity check at {bad}")
+            names = set(archive.namelist())
+            required = {"module.prop"}
+            missing = sorted(required - names)
+            if missing:
+                raise SystemExit(f"KPatch-Next module zip missing required files: {missing}")
+        PY
+
+    - name: Upload KPatch-Next Module
+      if: inputs.add_kpatch_next_module
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ env.FILE_NAME }}-KPatch-Next-Module
+        path: ./kpatch-next-module.zip
         if-no-files-found: error
         compression-level: 0
 
@@ -871,6 +968,7 @@ jobs:
         ADD_BBG: ${{ inputs.add_bbg }}
         ADD_OVERLAYFS: ${{ inputs.add_overlayfs_support }}
         ADD_KPM: ${{ inputs.add_kpm }}
+        ADD_KPATCH_NEXT_MODULE: ${{ inputs.add_kpatch_next_module }}
         FORCE_SUS_MOUNT: ${{ inputs.force_sus_mount }}
         SUSFS_ENABLE_LOG: ${{ inputs.susfs_enable_log }}
         ADD_STEALTH_POLICY: ${{ inputs.add_stealth_policy }}
@@ -895,6 +993,7 @@ jobs:
           echo "| **Unicode Filter** | Enabled |"
           echo "| **Baseband Guard** | $(S "$ADD_BBG") |"
           echo "| **KPM** | $(S "$ADD_KPM") |"
+          echo "| **KPatch-Next Module** | $(S "$ADD_KPATCH_NEXT_MODULE") |"
           echo "| **SUS_MOUNT** | $(S "$FORCE_SUS_MOUNT") |"
           echo "| **SUSFS logs** | $(S "$SUSFS_ENABLE_LOG") |"
           echo "| **Stealth policy zip** | $(S "$ADD_STEALTH_POLICY") |"

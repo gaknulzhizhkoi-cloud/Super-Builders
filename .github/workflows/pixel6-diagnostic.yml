@@ -28,37 +28,91 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - artifact_name: A134-R0-resukisu-6.1.99
-            add_susfs_base: false
-            add_enhanced_susfs: false
-            add_zeromount: false
-            add_ksu_safety: false
-            susfs_commit: ""
-            add_kpm: false
-            force_sus_mount: false
-            allow_sus_mount: false
-            susfs_auto_add_mounts: false
-            susfs_enable_log: true
-            add_stealth_policy: false
-          - artifact_name: A134-S0-no-sus-mount-6.1.99
+          - artifact_name: A134-KP0-s1-kpatch-next-6.1.99
             add_susfs_base: true
             add_enhanced_susfs: false
             add_zeromount: false
             add_ksu_safety: false
             susfs_commit: 9bf72ec2c83d40f194b936cabbc64ce342e005bf
+            add_zram: false
+            add_bbg: false
+            add_overlayfs_support: false
             add_kpm: false
-            force_sus_mount: false
-            allow_sus_mount: false
+            add_kpatch_next_module: true
+            add_ptrace_fix: false
+            add_perf_patches: false
+            force_sus_mount: true
+            allow_sus_mount: true
             susfs_auto_add_mounts: false
             susfs_enable_log: true
             add_stealth_policy: true
-          - artifact_name: A134-S1-sus-mount-no-autoadd-6.1.99
+          - artifact_name: A134-KP1-safety-kpatch-next-6.1.99
+            add_susfs_base: true
+            add_enhanced_susfs: false
+            add_zeromount: false
+            add_ksu_safety: true
+            susfs_commit: 9bf72ec2c83d40f194b936cabbc64ce342e005bf
+            add_zram: false
+            add_bbg: false
+            add_overlayfs_support: false
+            add_kpm: false
+            add_kpatch_next_module: true
+            add_ptrace_fix: false
+            add_perf_patches: false
+            force_sus_mount: true
+            allow_sus_mount: true
+            susfs_auto_add_mounts: false
+            susfs_enable_log: true
+            add_stealth_policy: true
+          - artifact_name: A134-KP2-overlay-ptrace-perf-kpatch-next-6.1.99
             add_susfs_base: true
             add_enhanced_susfs: false
             add_zeromount: false
             add_ksu_safety: false
             susfs_commit: 9bf72ec2c83d40f194b936cabbc64ce342e005bf
+            add_zram: false
+            add_bbg: false
+            add_overlayfs_support: true
             add_kpm: false
+            add_kpatch_next_module: true
+            add_ptrace_fix: true
+            add_perf_patches: true
+            force_sus_mount: true
+            allow_sus_mount: true
+            susfs_auto_add_mounts: false
+            susfs_enable_log: true
+            add_stealth_policy: true
+          - artifact_name: A134-KP3-full-no-safety-kpatch-next-6.1.99
+            add_susfs_base: true
+            add_enhanced_susfs: false
+            add_zeromount: false
+            add_ksu_safety: false
+            susfs_commit: 9bf72ec2c83d40f194b936cabbc64ce342e005bf
+            add_zram: true
+            add_bbg: true
+            add_overlayfs_support: true
+            add_kpm: false
+            add_kpatch_next_module: true
+            add_ptrace_fix: true
+            add_perf_patches: true
+            force_sus_mount: true
+            allow_sus_mount: true
+            susfs_auto_add_mounts: false
+            susfs_enable_log: true
+            add_stealth_policy: true
+          - artifact_name: A134-KP4-full-safety-kpatch-next-6.1.99
+            add_susfs_base: true
+            add_enhanced_susfs: false
+            add_zeromount: false
+            add_ksu_safety: true
+            susfs_commit: 9bf72ec2c83d40f194b936cabbc64ce342e005bf
+            add_zram: true
+            add_bbg: true
+            add_overlayfs_support: true
+            add_kpm: false
+            add_kpatch_next_module: true
+            add_ptrace_fix: true
+            add_perf_patches: true
             force_sus_mount: true
             allow_sus_mount: true
             susfs_auto_add_mounts: false
@@ -85,12 +139,13 @@ jobs:
       add_enhanced_susfs: ${{ matrix.add_enhanced_susfs }}
       add_zeromount: ${{ matrix.add_zeromount }}
       add_ksu_safety: ${{ matrix.add_ksu_safety }}
-      add_zram: false
-      add_bbg: false
-      add_overlayfs_support: false
+      add_zram: ${{ matrix.add_zram }}
+      add_bbg: ${{ matrix.add_bbg }}
+      add_overlayfs_support: ${{ matrix.add_overlayfs_support }}
       add_kpm: ${{ matrix.add_kpm }}
-      add_ptrace_fix: false
-      add_perf_patches: false
+      add_kpatch_next_module: ${{ matrix.add_kpatch_next_module }}
+      add_ptrace_fix: ${{ matrix.add_ptrace_fix }}
+      add_perf_patches: ${{ matrix.add_perf_patches }}
       add_module_version_bypass: false
       force_sus_mount: ${{ matrix.force_sus_mount }}
       allow_sus_mount: ${{ matrix.allow_sus_mount }}
