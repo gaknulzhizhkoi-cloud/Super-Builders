@@ -82,32 +82,14 @@ jobs:
             susfs_auto_add_mounts: false
             susfs_enable_log: true
             add_stealth_policy: true
-          - artifact_name: A134-KP3-full-no-safety-kpatch-next-6.1.99
-            add_susfs_base: true
-            add_enhanced_susfs: false
-            add_zeromount: false
-            add_ksu_safety: false
-            susfs_commit: 9bf72ec2c83d40f194b936cabbc64ce342e005bf
-            add_zram: true
-            add_bbg: true
-            add_overlayfs_support: true
-            add_kpm: false
-            add_kpatch_next_module: true
-            add_ptrace_fix: true
-            add_perf_patches: true
-            force_sus_mount: true
-            allow_sus_mount: true
-            susfs_auto_add_mounts: false
-            susfs_enable_log: true
-            add_stealth_policy: true
-          - artifact_name: A134-KP4-full-safety-kpatch-next-6.1.99
+          - artifact_name: A134-KP3-safety-overlay-ptrace-perf-kpatch-next-6.1.99
             add_susfs_base: true
             add_enhanced_susfs: false
             add_zeromount: false
             add_ksu_safety: true
             susfs_commit: 9bf72ec2c83d40f194b936cabbc64ce342e005bf
-            add_zram: true
-            add_bbg: true
+            add_zram: false
+            add_bbg: false
             add_overlayfs_support: true
             add_kpm: false
             add_kpatch_next_module: true
