@@ -344,12 +344,41 @@ jobs:
       if: inputs.add_susfs && inputs.add_ksu_safety
       working-directory: ${{ env.KERNEL_ROOT }}/${{ env.KSU_DIR }}
       run: |
-        PATCH="$GITHUB_WORKSPACE/$VERSION_DIR/ReSukiSU/patches/70_ksu_safety-resukisu-${KERNEL_VER}.patch"
-        if [ -s "$PATCH" ]; then
-          patch -p1 --fuzz=0 --no-backup-if-mismatch < "$PATCH"
-        else
-          echo "No 70_ patch needed"
-        fi
+        python3 - <<'PY'
+        from pathlib import Path
+        import re
+
+        root = Path(".")
+        candidates = []
+        for path in root.rglob("*.c"):
+            text = path.read_text(errors="ignore")
+            if "ksu_set_app_profile" in text or "CMD_SUSFS_ADD_SUS_KSTAT" in text:
+                candidates.append((path, text))
+
+        if not candidates:
+            raise SystemExit("KSU safety: could not find current ReSukiSU supercall source")
+
+        changed_any = False
+        for path, text in candidates:
+            original = text
+
+            if "ksu_set_app_profile" in text and "ksu_mark_running_process();" in text:
+                text, count = re.subn(
+                    r"#ifdef CONFIG_KSU_TRACEPOINT_HOOK\n(\s*)ksu_mark_running_process\(\);\n\s*#endif",
+                    r"#if defined(CONFIG_KSU_TRACEPOINT_HOOK) && defined(CONFIG_KSU_SUSFS)\n\1ksu_mark_running_process();\n#endif",
+                    text,
+                    count=1,
+                )
+                if count:
+                    print(f"KSU safety: gated ksu_mark_running_process in {path}")
+
+            if text != original:
+                path.write_text(text)
+                changed_any = True
+
+        if not changed_any:
+            raise SystemExit("KSU safety: no compatible changes were applied")
+        PY
 
     - name: Apply ZeroMount Patch
       if: inputs.add_susfs && inputs.add_zeromount
