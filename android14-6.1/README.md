@@ -64,7 +64,7 @@ This file gets merged on top of the stock GKI defconfig at build time. Each sect
 | `CONFIG_TCP_CONG_CUBIC` | y | CUBIC congestion control. Linux default. |
 | `CONFIG_TCP_CONG_WESTWOOD` | y | Westwood+ congestion control. Good for wireless. |
 | `CONFIG_IP_SET` + related | y | ipset support for firewall apps (AFWall+, NetGuard). |
-| `CONFIG_KALLSYMS_ALL` | y | Full kernel symbol table. Required by KSU for hook resolution. |
+| `CONFIG_KALLSYMS_ALL` | y | Full kernel symbol table. Required by KSU for hook resolution and useful for later KPatch-Next experiments. |
 
 ### [susfs]
 
@@ -108,13 +108,9 @@ Debug options that may be enabled by your device's vendor config. **All commente
 
 Disabling them reduces lock contention and improves throughput, but removes kernel debug safety nets.
 
-### [kpm]
+### KPM / KPatch-Next
 
-```
-CONFIG_KPM=y
-```
-
-Kernel Patch Manager. Enables runtime kernel patching support.
+`CONFIG_KPM` is intentionally not part of the ReSukiSU latest fragment. ReSukiSU removed its in-tree KPM support in PR #226, so Pixel 6 ReSukiSU builds keep only `CONFIG_KALLSYMS=y` and `CONFIG_KALLSYMS_ALL=y` as a future KPatch-friendly baseline. KPatch-Next should be tested as a separate runtime layer after the non-KPatch kernel is proven boot-stable.
 
 ---
 
@@ -159,7 +155,7 @@ Scripts in `build-helpers/` are called by CI at specific stages. They handle dif
 1. Go to **Actions** → pick the workflow for your variant (`build-sukisu.yml`, `build-resukisu.yml`, etc.)
 2. Click **Run workflow**
 3. Fill in: `android_version`, `kernel_version`, `sub_level`, `os_patch_level`
-4. Toggle feature flags as needed (all default to on except `add_bbg` and `add_kpm`)
+4. Toggle feature flags as needed (all default to on except `add_bbg`; `add_kpm` is deprecated for latest ReSukiSU)
 
 ### From CLI
 
@@ -185,7 +181,7 @@ gh workflow run build-sukisu.yml --ref main \
 | `add_zram` | true | Enables ZRAM config section |
 | `add_overlayfs_support` | true | Enables overlayfs config section |
 | `add_bbg` | false | Runs `setup-bbg.sh` |
-| `add_kpm` | false | Enables KPM config section |
+| `add_kpm` | false | Deprecated for latest ReSukiSU. Use a KPatch-friendly build first, then test KPatch-Next separately. |
 
 ### Dry-Testing (Patch Validation)
 
