@@ -205,7 +205,7 @@ jobs:
         [[ "$ADD_SUSFS_BASE" != "true" || "$ADD_RESUKISU" == "true" ]] || { echo "SUSFS requires ReSukiSU"; exit 1; }
         [[ "$ADD_ENHANCED_SUSFS" != "true" || "$ADD_SUSFS_BASE" == "true" ]] || { echo "Enhanced SUSFS requires base SUSFS"; exit 1; }
         [[ "$ADD_KSU_SAFETY" != "true" || "$ADD_SUSFS_BASE" == "true" ]] || { echo "KSU safety requires base SUSFS"; exit 1; }
-        [[ "$ADD_ZEROMOUNT" != "true" || "$ADD_ENHANCED_SUSFS" == "true" ]] || { echo "ZeroMount requires enhanced SUSFS"; exit 1; }
+        [[ "$ADD_ZEROMOUNT" != "true" || "$ADD_SUSFS_BASE" == "true" ]] || { echo "ZeroMount requires base SUSFS"; exit 1; }
 
     - name: Sync Kernel Source
       working-directory: ${{ env.KERNEL_ROOT }}
