@@ -36,32 +36,14 @@ jobs:
             allow_sus_mount: false
             susfs_enable_log: true
             add_stealth_policy: false
-          - artifact_name: A134-S0-susfs-2.1-minimal-6.1.99
+          - artifact_name: A134-S0-no-sus-mount-6.1.99
             add_susfs_base: true
             add_enhanced_susfs: false
             susfs_commit: 9bf72ec2c83d40f194b936cabbc64ce342e005bf
             add_kpm: false
-            force_sus_mount: true
-            allow_sus_mount: true
+            force_sus_mount: false
+            allow_sus_mount: false
             susfs_enable_log: true
-            add_stealth_policy: true
-          - artifact_name: A134-K0-kpm-minimal-6.1.99
-            add_susfs_base: true
-            add_enhanced_susfs: false
-            susfs_commit: 9bf72ec2c83d40f194b936cabbc64ce342e005bf
-            add_kpm: true
-            force_sus_mount: true
-            allow_sus_mount: true
-            susfs_enable_log: true
-            add_stealth_policy: true
-          - artifact_name: A134-F0-final-minimal-6.1.99
-            add_susfs_base: true
-            add_enhanced_susfs: false
-            susfs_commit: 9bf72ec2c83d40f194b936cabbc64ce342e005bf
-            add_kpm: true
-            force_sus_mount: true
-            allow_sus_mount: true
-            susfs_enable_log: false
             add_stealth_policy: true
     uses: ./.github/workflows/build-resukisu.yml
     with:
