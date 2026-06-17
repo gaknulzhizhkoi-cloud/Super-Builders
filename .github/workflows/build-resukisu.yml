@@ -668,8 +668,18 @@ jobs:
         BUILD_RC=0
         LTO_MODE=thin
         [[ "$ANDROID_VER" == android16* || "$KERNEL_VER" == "6.12" ]] && LTO_MODE=none
+        BAZEL_ENV_ARGS=""
+        if [ -n "${KBUILD_BUILD_TIMESTAMP:-}" ]; then
+          BAZEL_ENV_ARGS+=" --action_env=KBUILD_BUILD_TIMESTAMP=${KBUILD_BUILD_TIMESTAMP}"
+        fi
+        if [ -n "${KBUILD_BUILD_USER:-}" ]; then
+          BAZEL_ENV_ARGS+=" --action_env=KBUILD_BUILD_USER=${KBUILD_BUILD_USER}"
+        fi
+        if [ -n "${KBUILD_BUILD_HOST:-}" ]; then
+          BAZEL_ENV_ARGS+=" --action_env=KBUILD_BUILD_HOST=${KBUILD_BUILD_HOST}"
+        fi
         if [ -f "build/build.sh" ]; then
-          KMI_SYMBOL_LIST_STRICT_MODE=0 HOSTLD=/usr/bin/ld.lld GKI_DEFCONFIG_FRAGMENT="$DEFCONFIG_FRAGMENT" LTO=$LTO_MODE KBUILD_BUILD_TIMESTAMP="${KBUILD_BUILD_TIMESTAMP:-}" SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-}" BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || BUILD_RC=$?
+          KMI_SYMBOL_LIST_STRICT_MODE=0 HOSTLD=/usr/bin/ld.lld GKI_DEFCONFIG_FRAGMENT="$DEFCONFIG_FRAGMENT" LTO=$LTO_MODE BAZEL_ARGS="${BAZEL_ARGS:-}${BAZEL_ENV_ARGS}" KBUILD_BUILD_TIMESTAMP="${KBUILD_BUILD_TIMESTAMP:-}" SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-}" BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh || BUILD_RC=$?
         else
           # Prebuilt clang sysroot lacks glibc 2.39 C23 symbols - link against system libc
           if [ -f common/tools/bpf/resolve_btfids/Makefile ]; then
