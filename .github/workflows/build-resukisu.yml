@@ -91,6 +91,9 @@ on:
       allow_sus_mount:
         type: boolean
         default: false
+      susfs_auto_add_mounts:
+        type: boolean
+        default: true
       susfs_enable_log:
         type: boolean
         default: true
@@ -503,6 +506,7 @@ jobs:
         ADD_KPM: ${{ inputs.add_kpm }}
         DIAGNOSTIC_MODE: ${{ inputs.diagnostic_mode }}
         FORCE_SUS_MOUNT: ${{ inputs.force_sus_mount }}
+        SUSFS_AUTO_ADD_MOUNTS: ${{ inputs.susfs_auto_add_mounts }}
         SUSFS_ENABLE_LOG: ${{ inputs.susfs_enable_log }}
       run: |
         FRAGMENT="$GITHUB_WORKSPACE/$VERSION_DIR/defconfig.fragment"
@@ -514,6 +518,8 @@ jobs:
           [[ "$ADD_RESUKISU" == "true" ]] && echo 'CONFIG_KSU=y' >> "$SOURCE_FRAGMENT"
           [[ "$ADD_RESUKISU" == "true" ]] && echo 'CONFIG_KSU_MULTI_MANAGER_SUPPORT=y' >> "$SOURCE_FRAGMENT"
           [[ "$ADD_RESUKISU" == "true" ]] && echo 'CONFIG_KSU_TOOLKIT_SUPPORT=y' >> "$SOURCE_FRAGMENT"
+          [[ "$ADD_RESUKISU" == "true" ]] && echo 'CONFIG_KALLSYMS=y' >> "$SOURCE_FRAGMENT"
+          [[ "$ADD_RESUKISU" == "true" ]] && echo 'CONFIG_KALLSYMS_ALL=y' >> "$SOURCE_FRAGMENT"
           [[ "$ADD_KPM" == "true" ]] && echo 'CONFIG_KALLSYMS=y' >> "$SOURCE_FRAGMENT"
           [[ "$ADD_KPM" == "true" ]] && echo 'CONFIG_KALLSYMS_ALL=y' >> "$SOURCE_FRAGMENT"
           printf '\n# [susfs]\n' >> "$SOURCE_FRAGMENT"
@@ -521,12 +527,18 @@ jobs:
           FRAGMENT="$SOURCE_FRAGMENT"
         fi
 
-        if [[ "$FORCE_SUS_MOUNT" == "true" || "$SUSFS_ENABLE_LOG" != "true" ]]; then
+        if [[ "$FORCE_SUS_MOUNT" == "true" || "$SUSFS_AUTO_ADD_MOUNTS" != "true" || "$SUSFS_ENABLE_LOG" != "true" ]]; then
           OVERRIDE_FRAGMENT="$RUNNER_TEMP/config.override.fragment"
           cp "$FRAGMENT" "$OVERRIDE_FRAGMENT"
           if [[ "$FORCE_SUS_MOUNT" == "true" ]]; then
             sed -i '/^CONFIG_KSU_SUSFS_SUS_MOUNT=/d' "$OVERRIDE_FRAGMENT"
             printf '\nCONFIG_KSU_SUSFS_SUS_MOUNT=y\n' >> "$OVERRIDE_FRAGMENT"
+          fi
+          if [[ "$SUSFS_AUTO_ADD_MOUNTS" != "true" ]]; then
+            sed -i '/^CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=/d' "$OVERRIDE_FRAGMENT"
+            sed -i '/^CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=/d' "$OVERRIDE_FRAGMENT"
+            printf '\nCONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT=n\n' >> "$OVERRIDE_FRAGMENT"
+            printf 'CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT=n\n' >> "$OVERRIDE_FRAGMENT"
           fi
           if [[ "$SUSFS_ENABLE_LOG" != "true" ]]; then
             sed -i '/^CONFIG_KSU_SUSFS_ENABLE_LOG=/d' "$OVERRIDE_FRAGMENT"
@@ -641,13 +653,17 @@ jobs:
         chmod +x scripts/setlocalversion
 
         if [ -f "scripts/mkcompile_h" ]; then
-          sed -i "s|UTS_VERSION=.*|UTS_VERSION=\"${STOCK_VERSION}\"|" scripts/mkcompile_h
+          STOCK_UTS="${STOCK_VERSION#\#1 }"
+          sed -i "s|^UTS_VERSION=.*|UTS_VERSION=\"${STOCK_VERSION}\"|" scripts/mkcompile_h
+          sed -i "s|^TIMESTAMP=.*|TIMESTAMP=\"${STOCK_BUILD_TIMESTAMP}\"|" scripts/mkcompile_h
+          sed -i "s|^CONFIG_FLAGS=.*|CONFIG_FLAGS=\"${STOCK_UTS% ${STOCK_BUILD_TIMESTAMP}}\"|" scripts/mkcompile_h
           if grep -q "LINUX_COMPILE_BY=" scripts/mkcompile_h; then
-            sed -i "s|LINUX_COMPILE_BY=.*|LINUX_COMPILE_BY=\"${STOCK_BUILD_USER}\"|" scripts/mkcompile_h
-            sed -i "s|LINUX_COMPILE_HOST=.*|LINUX_COMPILE_HOST=\"${STOCK_BUILD_HOST}\"|" scripts/mkcompile_h
+            sed -i "s|^LINUX_COMPILE_BY=.*|LINUX_COMPILE_BY=\"${STOCK_BUILD_USER}\"|" scripts/mkcompile_h
+            sed -i "s|^LINUX_COMPILE_HOST=.*|LINUX_COMPILE_HOST=\"${STOCK_BUILD_HOST}\"|" scripts/mkcompile_h
           fi
           if [ -n "$STOCK_COMPILER" ] && grep -q "LINUX_COMPILER=" scripts/mkcompile_h; then
-            sed -i "s|LINUX_COMPILER=.*|LINUX_COMPILER=\"${STOCK_COMPILER}\"|" scripts/mkcompile_h
+            sed -i "s|^LINUX_COMPILER=.*|LINUX_COMPILER=\"${STOCK_COMPILER}\"|" scripts/mkcompile_h
+            sed -i "s|echo \\\\#define LINUX_COMPILER .*|echo \\\\#define LINUX_COMPILER \\\"${STOCK_COMPILER}\\\"|" scripts/mkcompile_h
           fi
         fi
 
@@ -712,6 +728,7 @@ jobs:
         ADD_SUSFS_BASE: ${{ inputs.add_susfs && inputs.add_susfs_base }}
         ADD_ZEROMOUNT: ${{ inputs.add_susfs && inputs.add_zeromount }}
         ALLOW_SUS_MOUNT: ${{ inputs.allow_sus_mount }}
+        SUSFS_AUTO_ADD_MOUNTS: ${{ inputs.susfs_auto_add_mounts }}
       run: |
         CONFIG_FILE=$(find "$KERNEL_ROOT" -type f -name .config | head -1)
         [ -f "$CONFIG_FILE" ] || { echo "Final .config not found"; exit 1; }
@@ -727,6 +744,8 @@ jobs:
         require_config CONFIG_KSU_SUSFS "$ADD_SUSFS_BASE"
         require_config CONFIG_ZEROMOUNT "$ADD_ZEROMOUNT"
         require_config CONFIG_KSU_SUSFS_SUS_MOUNT "$ALLOW_SUS_MOUNT"
+        require_config CONFIG_KSU_SUSFS_AUTO_ADD_SUS_KSU_DEFAULT_MOUNT "$SUSFS_AUTO_ADD_MOUNTS"
+        require_config CONFIG_KSU_SUSFS_AUTO_ADD_SUS_BIND_MOUNT "$SUSFS_AUTO_ADD_MOUNTS"
 
     - name: Prepare AnyKernel3
       run: |
