@@ -64,6 +64,18 @@ jobs:
             susfs_auto_add_mounts: false
             susfs_enable_log: true
             add_stealth_policy: true
+          - artifact_name: A134-S2-safety-kpatch-ready-no-zeromount-6.1.99
+            add_susfs_base: true
+            add_enhanced_susfs: false
+            add_zeromount: false
+            add_ksu_safety: true
+            susfs_commit: 9bf72ec2c83d40f194b936cabbc64ce342e005bf
+            add_kpm: false
+            force_sus_mount: true
+            allow_sus_mount: true
+            susfs_auto_add_mounts: false
+            susfs_enable_log: true
+            add_stealth_policy: true
     uses: ./.github/workflows/build-resukisu.yml
     with:
       android_version: android14
