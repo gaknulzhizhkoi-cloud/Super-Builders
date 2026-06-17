@@ -31,20 +31,86 @@ jobs:
           - artifact_name: A134-R0-resukisu-6.1.99
             add_susfs_base: false
             add_enhanced_susfs: false
+            add_zeromount: false
+            add_ksu_safety: false
             susfs_commit: ""
             add_kpm: false
             force_sus_mount: false
             allow_sus_mount: false
+            susfs_auto_add_mounts: false
             susfs_enable_log: true
             add_stealth_policy: false
           - artifact_name: A134-S0-no-sus-mount-6.1.99
             add_susfs_base: true
             add_enhanced_susfs: false
+            add_zeromount: false
+            add_ksu_safety: false
             susfs_commit: 9bf72ec2c83d40f194b936cabbc64ce342e005bf
             add_kpm: false
             force_sus_mount: false
             allow_sus_mount: false
+            susfs_auto_add_mounts: false
             susfs_enable_log: true
+            add_stealth_policy: true
+          - artifact_name: A134-S1-sus-mount-no-autoadd-6.1.99
+            add_susfs_base: true
+            add_enhanced_susfs: false
+            add_zeromount: false
+            add_ksu_safety: false
+            susfs_commit: 9bf72ec2c83d40f194b936cabbc64ce342e005bf
+            add_kpm: false
+            force_sus_mount: true
+            allow_sus_mount: true
+            susfs_auto_add_mounts: false
+            susfs_enable_log: true
+            add_stealth_policy: true
+          - artifact_name: A134-E1-enhanced-no-kpatch-6.1.99
+            add_susfs_base: true
+            add_enhanced_susfs: true
+            add_zeromount: false
+            add_ksu_safety: false
+            susfs_commit: 9bf72ec2c83d40f194b936cabbc64ce342e005bf
+            add_kpm: false
+            force_sus_mount: true
+            allow_sus_mount: true
+            susfs_auto_add_mounts: false
+            susfs_enable_log: true
+            add_stealth_policy: true
+          - artifact_name: A134-Z1-zeromount-no-kpatch-6.1.99
+            add_susfs_base: true
+            add_enhanced_susfs: true
+            add_zeromount: true
+            add_ksu_safety: false
+            susfs_commit: 9bf72ec2c83d40f194b936cabbc64ce342e005bf
+            add_kpm: false
+            force_sus_mount: true
+            allow_sus_mount: true
+            susfs_auto_add_mounts: false
+            susfs_enable_log: true
+            add_stealth_policy: true
+          - artifact_name: A134-K1-safety-no-kpatch-6.1.99
+            add_susfs_base: true
+            add_enhanced_susfs: true
+            add_zeromount: false
+            add_ksu_safety: true
+            susfs_commit: 9bf72ec2c83d40f194b936cabbc64ce342e005bf
+            add_kpm: false
+            force_sus_mount: true
+            allow_sus_mount: true
+            susfs_auto_add_mounts: false
+            susfs_enable_log: true
+            add_stealth_policy: true
+          - artifact_name: A134-F1-full-no-kpatch-6.1.99
+            add_susfs_base: true
+            add_enhanced_susfs: true
+            add_zeromount: true
+            add_ksu_safety: true
+            susfs_commit: 9bf72ec2c83d40f194b936cabbc64ce342e005bf
+            add_kpm: false
+            force_sus_mount: true
+            allow_sus_mount: true
+            susfs_auto_add_mounts: false
+            susfs_enable_log: false
             add_stealth_policy: true
     uses: ./.github/workflows/build-resukisu.yml
     with:
@@ -65,8 +131,8 @@ jobs:
       add_susfs: true
       add_susfs_base: ${{ matrix.add_susfs_base }}
       add_enhanced_susfs: ${{ matrix.add_enhanced_susfs }}
-      add_zeromount: false
-      add_ksu_safety: false
+      add_zeromount: ${{ matrix.add_zeromount }}
+      add_ksu_safety: ${{ matrix.add_ksu_safety }}
       add_zram: false
       add_bbg: false
       add_overlayfs_support: false
@@ -76,5 +142,6 @@ jobs:
       add_module_version_bypass: false
       force_sus_mount: ${{ matrix.force_sus_mount }}
       allow_sus_mount: ${{ matrix.allow_sus_mount }}
+      susfs_auto_add_mounts: ${{ matrix.susfs_auto_add_mounts }}
       susfs_enable_log: ${{ matrix.susfs_enable_log }}
       add_stealth_policy: ${{ matrix.add_stealth_policy }}
